@@ -250,20 +250,23 @@ const Login = () => {
 
       if (error) throw error;
 
-      // 2. Obtém os dados do usuário autenticado
+      // 2. Aguarda um pequeno atraso para garantir que a autenticação seja concluída
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 3. Obtém os dados do usuário autenticado
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 3. Verifica se o usuário já existe na tabela Usuarios
+      // 4. Verifica se o usuário já existe na tabela Usuarios
       const { data: existingUser, error: userError } = await supabase
         .from('Usuarios')
         .select('*')
         .eq('email', user.email)
-        .maybeSingle();
+        .maybeSingle(); // Usa maybeSingle() para evitar erros se o usuário não existir
 
       if (userError) throw userError;
 
       if (!existingUser) {
-        // 4. Se o usuário não existir, cria um novo registro
+        // 5. Se o usuário não existir, cria um novo registro
         const { data: newUser, error: insertError } = await supabase
           .from('Usuarios')
           .insert([
@@ -277,7 +280,7 @@ const Login = () => {
 
         if (insertError) throw insertError;
       } else {
-        // 5. Se o usuário já existir, atualiza o último login
+        // 6. Se o usuário já existir, atualiza o último login
         const { error: updateError } = await supabase
           .from('Usuarios')
           .update({ ultimo_login: new Date().toISOString() })
@@ -286,7 +289,7 @@ const Login = () => {
         if (updateError) throw updateError;
       }
 
-      // 6. Redireciona para o DashboardGamer
+      // 7. Redireciona para o DashboardGamer
       navigate('/DashboardGamer');
     } catch (error) {
       // Exibe a mensagem de erro apenas se o login falhar
