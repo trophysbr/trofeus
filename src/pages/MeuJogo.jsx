@@ -12,6 +12,7 @@ import {
 } from '../styles/components/DashboardStyles';
 import { toast } from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
+import { Toaster } from 'react-hot-toast';
 
 const GameContainer = styled.div`
   padding: 2rem;
@@ -168,6 +169,7 @@ const MeuJogo = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [dataError, setDataError] = useState('');
   const [statusError, setStatusError] = useState('');
+  const [notaError, setNotaError] = useState('');
 
   useEffect(() => {
     if (!location.state?.gameId) {
@@ -238,6 +240,13 @@ const MeuJogo = () => {
       setStatusError('');
     }
 
+    if (editedData.minha_nota && editedData.minha_nota > 11) {
+      setNotaError('A nota não pode ser maior que 11');
+      return;
+    } else {
+      setNotaError('');
+    }
+
     const erro = validarDatas(editedData.data_inicio, editedData.data_conclusao);
     if (erro) {
       setDataError(erro);
@@ -279,6 +288,29 @@ const MeuJogo = () => {
 
   return (
     <DashboardContainer>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#363636',
+            color: '#fff',
+            fontSize: '1rem',
+            padding: '16px 24px',
+            minWidth: '300px',
+          },
+          success: {
+            style: {
+              background: '#4BB543',
+            },
+          },
+          error: {
+            style: {
+              background: '#ff4444',
+            },
+          },
+        }}
+      />
+      
       <Header>
         <WelcomeText>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -416,14 +448,24 @@ const MeuJogo = () => {
               <InfoItem>
                 <Label>Minha Nota</Label>
                 {isEditing ? (
-                  <Input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={editedData.minha_nota}
-                    onChange={(e) => setEditedData({...editedData, minha_nota: e.target.value})}
-                  />
+                  <>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="11"
+                      step="0.1"
+                      value={editedData.minha_nota}
+                      onChange={(e) => {
+                        setEditedData({...editedData, minha_nota: e.target.value});
+                        setNotaError('');
+                      }}
+                    />
+                    {notaError && (
+                      <div style={{ color: '#ff4444', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        {notaError}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <Rating>★ {gameData.jogo_nota || 'Não avaliado'}</Rating>
                 )}
