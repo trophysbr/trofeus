@@ -158,14 +158,16 @@ const MeuJogo = () => {
   const [gameData, setGameData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({
-    status: '',
-    plataforma_jogada: '',
-    data_inicio: '',
-    data_conclusao: '',
-    dificuldade: '',
-    minha_nota: ''
+    status: null,
+    plataforma_jogada: null,
+    data_inicio: null,
+    data_conclusao: null,
+    dificuldade: null,
+    minha_nota: null
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [dataError, setDataError] = useState('');
+  const [statusError, setStatusError] = useState('');
 
   useEffect(() => {
     if (!location.state?.gameId) {
@@ -174,6 +176,15 @@ const MeuJogo = () => {
     }
     fetchGameData(location.state.gameId);
   }, [location.state, navigate]);
+
+  const formatarData = (data) => {
+    if (!data) return 'Não definida';
+    const date = new Date(data);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const fetchGameData = async (gameId) => {
     try {
@@ -186,12 +197,12 @@ const MeuJogo = () => {
       if (error) throw error;
       setGameData(data);
       setEditedData({
-        status: data.jogo_status || '',
-        plataforma_jogada: data.jogo_plataforma_jogada || '',
-        data_inicio: data.jogo_data_inicio || '',
-        data_conclusao: data.jogo_data_fim || '',
-        dificuldade: data.jogo_dificuldade || '',
-        minha_nota: data.jogo_nota || ''
+        status: data.jogo_status || null,
+        plataforma_jogada: data.jogo_plataforma_jogada || null,
+        data_inicio: data.jogo_data_inicio ? data.jogo_data_inicio.split('T')[0] : null,
+        data_conclusao: data.jogo_data_fim ? data.jogo_data_fim.split('T')[0] : null,
+        dificuldade: data.jogo_dificuldade || null,
+        minha_nota: data.jogo_nota || null
       });
     } catch (error) {
       console.error('Erro ao buscar dados do jogo:', error);
@@ -202,20 +213,54 @@ const MeuJogo = () => {
     setIsEditing(true);
   };
 
+  const validarDatas = (inicio, conclusao) => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const dataInicio = new Date(inicio);
+    const dataConclusao = new Date(conclusao);
+    const dataAtual = new Date(hoje);
+
+    if (conclusao && inicio && dataConclusao < dataInicio) {
+      return 'A data de conclusão não pode ser anterior à data de início';
+    }
+
+    if (conclusao && dataConclusao > dataAtual) {
+      return 'A data de conclusão não pode ser maior que a data atual';
+    }
+
+    return '';
+  };
+
   const handleSave = async () => {
+    if (!editedData.status) {
+      setStatusError('O status é obrigatório');
+      return;
+    } else {
+      setStatusError('');
+    }
+
+    const erro = validarDatas(editedData.data_inicio, editedData.data_conclusao);
+    if (erro) {
+      setDataError(erro);
+      return;
+    }
+
     setIsSaving(true);
+    setDataError('');
+
     try {
+      const updateData = {
+        jogo_status: editedData.status,
+        jogo_plataforma_jogada: editedData.plataforma_jogada,
+        jogo_data_inicio: editedData.data_inicio || null,
+        jogo_data_fim: editedData.data_conclusao || null,
+        jogo_dificuldade: editedData.dificuldade,
+        jogo_nota: editedData.minha_nota,
+        data_alteracao: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('Jogos')
-        .update({
-          jogo_status: editedData.status,
-          jogo_plataforma_jogada: editedData.plataforma_jogada,
-          jogo_data_inicio: editedData.data_inicio,
-          jogo_data_fim: editedData.data_conclusao,
-          jogo_dificuldade: editedData.dificuldade,
-          jogo_nota: editedData.minha_nota,
-          data_alteracao: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('jogo_id', gameData.jogo_id);
 
       if (error) throw error;
@@ -267,17 +312,29 @@ const MeuJogo = () => {
               <InfoItem>
                 <Label>Status</Label>
                 {isEditing ? (
-                  <Select
-                    value={editedData.status}
-                    onChange={(e) => setEditedData({...editedData, status: e.target.value})}
-                  >
-                    <option value="Na Fila">Na Fila</option>
-                    <option value="Concluído">Concluído</option>
-                    <option value="Jogando">Jogando</option>
-                    <option value="Suspenso">Suspenso</option>
-                  </Select>
+                  <>
+                    <Select
+                      value={editedData.status || ''}
+                      onChange={(e) => {
+                        setEditedData({...editedData, status: e.target.value || null});
+                        setStatusError('');
+                      }}
+                      required
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="Na Fila">Na Fila</option>
+                      <option value="Concluído">Concluído</option>
+                      <option value="Jogando">Jogando</option>
+                      <option value="Suspenso">Suspenso</option>
+                    </Select>
+                    {statusError && (
+                      <div style={{ color: '#ff4444', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        {statusError}
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <Value>{gameData.jogo_status}</Value>
+                  <Value>{gameData.jogo_status || 'Não definido'}</Value>
                 )}
               </InfoItem>
 
@@ -285,9 +342,10 @@ const MeuJogo = () => {
                 <Label>Plataforma Jogada</Label>
                 {isEditing ? (
                   <Select
-                    value={editedData.plataforma_jogada}
-                    onChange={(e) => setEditedData({...editedData, plataforma_jogada: e.target.value})}
+                    value={editedData.plataforma_jogada || ''}
+                    onChange={(e) => setEditedData({...editedData, plataforma_jogada: e.target.value || null})}
                   >
+                    <option value="">Selecione...</option>
                     <option value="Emulador">Emulador</option>
                     <option value="Console Nativo">Console Nativo</option>
                     <option value="Epic">Epic</option>
@@ -310,20 +368,27 @@ const MeuJogo = () => {
                     onChange={(e) => setEditedData({...editedData, data_inicio: e.target.value})}
                   />
                 ) : (
-                  <Value>{gameData.jogo_data_inicio || 'Não definida'}</Value>
+                  <Value>{formatarData(gameData.jogo_data_inicio)}</Value>
                 )}
               </InfoItem>
 
               <InfoItem>
                 <Label>Data de Conclusão</Label>
                 {isEditing ? (
-                  <Input
-                    type="date"
-                    value={editedData.data_conclusao}
-                    onChange={(e) => setEditedData({...editedData, data_conclusao: e.target.value})}
-                  />
+                  <>
+                    <Input
+                      type="date"
+                      value={editedData.data_conclusao}
+                      onChange={(e) => {
+                        setEditedData({...editedData, data_conclusao: e.target.value});
+                        setDataError('');
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                    {dataError && <div style={{ color: '#ff4444', fontSize: '0.9rem', marginTop: '0.5rem' }}>{dataError}</div>}
+                  </>
                 ) : (
-                  <Value>{gameData.jogo_data_fim || 'Não definida'}</Value>
+                  <Value>{formatarData(gameData.jogo_data_fim)}</Value>
                 )}
               </InfoItem>
 
@@ -331,9 +396,10 @@ const MeuJogo = () => {
                 <Label>Dificuldade</Label>
                 {isEditing ? (
                   <Select
-                    value={editedData.dificuldade}
-                    onChange={(e) => setEditedData({...editedData, dificuldade: e.target.value})}
+                    value={editedData.dificuldade || ''}
+                    onChange={(e) => setEditedData({...editedData, dificuldade: e.target.value || null})}
                   >
+                    <option value="">Selecione...</option>
                     <option value="Fácil Demais">Fácil Demais</option>
                     <option value="Fácil">Fácil</option>
                     <option value="Média">Média</option>

@@ -1,8 +1,18 @@
 import styled from 'styled-components';
 
-const GameCard = ({ title, image, progress }) => {
+const GameCard = ({ id, title, image, progress, onClick }) => {
   return (
-    <CardContainer>
+    <CardContainer 
+      style={{ 
+        cursor: 'pointer',
+        backgroundColor: '#1e1e2e',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        transition: 'transform 0.2s',
+        height: '370px'
+      }}
+      onClick={onClick}
+    >
       <GameImage src={image} alt={title} />
       <GameInfo>
         <h3>{title}</h3>

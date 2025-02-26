@@ -62,7 +62,8 @@ const DashboardGamer = () => {
         .from('Jogos')
         .select('*')
         .eq('user_id', userId)
-        .order('data_alteracao', { ascending: false })
+        .order('data_alteracao', { ascending: false, nullsFirst: false })
+        .order('data_inclusao', { ascending: false })
         .limit(10);
 
       if (gamesError) throw gamesError;
@@ -107,7 +108,8 @@ const DashboardGamer = () => {
         image: game.jogo_imagem_url,
         progress: game.jogo_status === 'Na Fila' 
           ? 'Na Fila'
-          : `${game.jogo_status} - ${formatGameTime(game.jogo_tempo_jogo)}h`
+          : `${game.jogo_status} - ${formatGameTime(game.jogo_tempo_jogo)}h`,
+        onClick: () => navigate('/meu-jogo', { state: { gameId: game.jogo_id } })
       }));
 
       // Mapear os dados dos desafios
