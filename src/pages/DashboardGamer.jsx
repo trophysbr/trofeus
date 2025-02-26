@@ -27,9 +27,7 @@ const WelcomeTextStyled = styled.div`
     font-size: 2.5rem;
     margin-bottom: 0.5rem;
     span {
-      background: linear-gradient(90deg, #6c5ce7, #ff7675);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #FFD700;
       font-weight: bold;
     }
   }
@@ -200,7 +198,7 @@ const DashboardGamer = () => {
   return (
     <DashboardContainer>
       <Header>
-        <WelcomeText>
+        <WelcomeTextStyled>
           <h1>
             Bem-vindo de volta, <span>{userName}</span>
           </h1>
@@ -208,7 +206,7 @@ const DashboardGamer = () => {
             <Level>Nível 42</Level>
             <XP>XP: 12,450</XP>
           </LevelInfo>
-        </WelcomeText>
+        </WelcomeTextStyled>
       </Header>
 
       <StatsGrid>

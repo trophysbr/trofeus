@@ -193,9 +193,9 @@ const Login = () => {
         .from('Usuarios')
         .select('*')
         .eq('email', user.email)
-        .single();
+        .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') throw userError; // Ignora erro de "nenhum resultado"
+      if (userError) throw userError;
 
       if (!existingUser) {
         // 4. Se o usuário não existir, cria um novo registro
@@ -233,7 +233,7 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setError(null);
+    setError(null); // Limpa o erro antes de iniciar o login
 
     try {
       // 1. Autentica o usuário com o Google
@@ -258,9 +258,9 @@ const Login = () => {
         .from('Usuarios')
         .select('*')
         .eq('email', user.email)
-        .single();
+        .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') throw userError; // Ignora erro de "nenhum resultado"
+      if (userError) throw userError;
 
       if (!existingUser) {
         // 4. Se o usuário não existir, cria um novo registro
@@ -289,7 +289,10 @@ const Login = () => {
       // 6. Redireciona para o DashboardGamer
       navigate('/DashboardGamer');
     } catch (error) {
-      setError('Erro ao fazer login com Google.');
+      // Exibe a mensagem de erro apenas se o login falhar
+      if (error.message !== 'OAuth login cancelled') {
+        setError('Erro ao fazer login com Google.');
+      }
       console.error('Erro:', error.message);
     } finally {
       setLoading(false);
