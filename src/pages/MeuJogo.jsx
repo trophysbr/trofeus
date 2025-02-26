@@ -164,7 +164,8 @@ const MeuJogo = () => {
     data_inicio: null,
     data_conclusao: null,
     dificuldade: null,
-    minha_nota: null
+    minha_nota: null,
+    tempo_jogado: null
   });
   const [isSaving, setIsSaving] = useState(false);
   const [dataError, setDataError] = useState('');
@@ -204,7 +205,8 @@ const MeuJogo = () => {
         data_inicio: data.jogo_data_inicio ? data.jogo_data_inicio.split('T')[0] : null,
         data_conclusao: data.jogo_data_fim ? data.jogo_data_fim.split('T')[0] : null,
         dificuldade: data.jogo_dificuldade || null,
-        minha_nota: data.jogo_nota || null
+        minha_nota: data.jogo_nota || null,
+        tempo_jogado: data.jogo_tempo_jogo || null
       });
     } catch (error) {
       console.error('Erro ao buscar dados do jogo:', error);
@@ -264,6 +266,7 @@ const MeuJogo = () => {
         jogo_data_fim: editedData.data_conclusao || null,
         jogo_dificuldade: editedData.dificuldade,
         jogo_nota: editedData.minha_nota,
+        jogo_tempo_jogo: editedData.tempo_jogado || null,
         data_alteracao: new Date().toISOString()
       };
 
@@ -468,6 +471,22 @@ const MeuJogo = () => {
                   </>
                 ) : (
                   <Rating>★ {gameData.jogo_nota || 'Não avaliado'}</Rating>
+                )}
+              </InfoItem>
+
+              <InfoItem>
+                <Label>Tempo Jogado</Label>
+                {isEditing ? (
+                  <Input
+                    type="time"
+                    step="60"
+                    value={editedData.tempo_jogado ? editedData.tempo_jogado.substring(0, 5) : ''}
+                    onChange={(e) => {
+                      setEditedData({...editedData, tempo_jogado: e.target.value + ':00'});
+                    }}
+                  />
+                ) : (
+                  <Value>{gameData.jogo_tempo_jogo ? gameData.jogo_tempo_jogo.substring(0, 5) : 'Não informado'}</Value>
                 )}
               </InfoItem>
 
