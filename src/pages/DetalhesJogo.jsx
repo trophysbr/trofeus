@@ -32,6 +32,7 @@ import styled from 'styled-components';
 import { supabase } from '../config/supabaseClient';
 import { toast } from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
+import { FaArrowLeft } from 'react-icons/fa';
 
 const LoadingContainer = {
   display: 'flex',
@@ -72,6 +73,23 @@ const AddButton = styled.button`
 
   &:hover {
     background-color: #5f4ed0;
+  }
+`;
+
+const BackButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
   }
 `;
 
@@ -213,7 +231,13 @@ const DetalhesJogo = () => {
       
       <Header>
         <WelcomeText>
-          <h1>Detalhes do Jogo</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <BackButton onClick={() => navigate('/DashboardGamer')}>
+              <FaArrowLeft />
+              Voltar
+            </BackButton>
+            <h1>Detalhes do Jogo</h1>
+          </div>
           <LevelInfo>
             <Level>Nível 42</Level>
             <XP>XP: 12,450</XP>

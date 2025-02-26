@@ -259,6 +259,12 @@ const MeuJogo = () => {
     setDataError('');
 
     try {
+      let tempoJogadoFormatado = null;
+      if (editedData.tempo_jogado) {
+        const [hours, minutes] = editedData.tempo_jogado.split(':');
+        tempoJogadoFormatado = `${hours.padStart(2, '0')}:${(minutes || '00').padStart(2, '0')}:00`;
+      }
+
       const updateData = {
         jogo_status: editedData.status,
         jogo_plataforma_jogada: editedData.plataforma_jogada,
@@ -266,7 +272,7 @@ const MeuJogo = () => {
         jogo_data_fim: editedData.data_conclusao || null,
         jogo_dificuldade: editedData.dificuldade,
         jogo_nota: editedData.minha_nota,
-        jogo_tempo_jogo: editedData.tempo_jogado || null,
+        jogo_tempo_jogo: tempoJogadoFormatado || null,
         data_alteracao: new Date().toISOString()
       };
 
@@ -478,15 +484,36 @@ const MeuJogo = () => {
                 <Label>Tempo Jogado</Label>
                 {isEditing ? (
                   <Input
-                    type="time"
-                    step="60"
-                    value={editedData.tempo_jogado ? editedData.tempo_jogado.substring(0, 5) : ''}
+                    type="text"
+                    placeholder="HHH:MM"
+                    value={editedData.tempo_jogado || ''}
                     onChange={(e) => {
-                      setEditedData({...editedData, tempo_jogado: e.target.value + ':00'});
+                      const value = e.target.value;
+                      // Remove caracteres não numéricos
+                      const numericValue = value.replace(/\D/g, '');
+                      // Separa horas e minutos
+                      let hours = '';
+                      let minutes = '';
+                      if (numericValue.length <= 2) {
+                        hours = numericValue;
+                      } else {
+                        hours = numericValue.slice(0, -2);
+                        minutes = numericValue.slice(-2);
+                      }
+                      // Limita minutos a 2 dígitos
+                      minutes = minutes.slice(0, 2);
+                      // Formata para HHH:MM
+                      const formattedValue = minutes ? `${hours}:${minutes}` : hours;
+                      setEditedData({...editedData, tempo_jogado: formattedValue});
                     }}
+                    autoComplete="off"
                   />
                 ) : (
-                  <Value>{gameData.jogo_tempo_jogo ? gameData.jogo_tempo_jogo.substring(0, 5) : 'Não informado'}</Value>
+                  <Value>
+                    {gameData.jogo_tempo_jogo 
+                      ? gameData.jogo_tempo_jogo.replace(/:00$/, '') // Remove os segundos
+                      : 'Não informado'}
+                  </Value>
                 )}
               </InfoItem>
 
