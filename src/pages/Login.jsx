@@ -258,6 +258,8 @@ const Login = () => {
       // 2. Aguarda um pequeno atraso para garantir que a autenticação seja concluída
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      console.log('Autenticação concluída');
+
       // 3. Obtém os dados do usuário autenticado
       const { data: { user } } = await supabase.auth.getUser();
 

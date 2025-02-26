@@ -55,7 +55,7 @@ const DashboardGamer = () => {
         .from('Usuarios')
         .select('nome')
         .eq('email', data.user.email)
-        .single();
+        .maybeSingle();
 
       if (!error && userData?.nome) {
         const firstName = userData.nome.split(' ')[0];
