@@ -11,6 +11,7 @@ import {
   XP,
 } from '../styles/components/DashboardStyles';
 import { toast } from 'react-hot-toast';
+import { FaArrowLeft } from 'react-icons/fa';
 
 const GameContainer = styled.div`
   padding: 2rem;
@@ -134,6 +135,23 @@ const Rating = styled.div`
   color: #ffd700;
 `;
 
+const BackButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
 const MeuJogo = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -218,7 +236,13 @@ const MeuJogo = () => {
     <DashboardContainer>
       <Header>
         <WelcomeText>
-          <h1>Meu Jogo</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <BackButton onClick={() => navigate('/biblioteca')}>
+              <FaArrowLeft />
+              Voltar
+            </BackButton>
+            <h1>Meu Jogo</h1>
+          </div>
           <LevelInfo>
             <Level>Nível 42</Level>
             <XP>XP: 12,450</XP>

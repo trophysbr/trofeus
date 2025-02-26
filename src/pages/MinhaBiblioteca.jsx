@@ -27,6 +27,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import BibliotecaSearch from '../components/BibliotecaSearch';
 import styled from 'styled-components';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const SearchWrapper = styled.div`
   width: 500px;
@@ -39,18 +40,35 @@ const MinhaBiblioteca = () => {
   const [filter, setFilter] = useState('todos');
   const [sortBy, setSortBy] = useState('nome');
   const [searchTerm, setSearchTerm] = useState('');
+  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchGames();
+    const fetchUserId = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setUserId(data.user.id);
+      } catch (error) {
+        console.error('Erro ao buscar ID do usuário:', error);
+        setLoading(false);
+      }
+    };
+    fetchUserId();
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchGames();
+    }
+  }, [userId]);
 
   const fetchGames = async () => {
     try {
       const { data, error } = await supabase
         .from('Jogos')
         .select('*')
-        .eq('user_id', (await supabase.auth.getUser()).data.user.id)
+        .eq('user_id', userId)
         .order('jogo_nome', { ascending: true });
 
       if (error) throw error;
@@ -134,7 +152,7 @@ const MinhaBiblioteca = () => {
   };
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return <LoadingSpinner />;
   }
 
   return (

@@ -30,11 +30,22 @@ const DashboardGamer = () => {
     trophiesCount: 0
   });
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchData();
+    const fetchUserId = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUserId(data.user.id);
+    };
+    fetchUserId();
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
 
   const formatGameTime = (timeString) => {
     if (!timeString) return '0';
@@ -46,45 +57,58 @@ const DashboardGamer = () => {
 
   const fetchData = async () => {
     try {
-      // Buscar jogos recentes
+      // Buscar jogos recentes do usuário
       const { data: games, error: gamesError } = await supabase
         .from('Jogos')
         .select('*')
+        .eq('user_id', userId)
         .order('data_alteracao', { ascending: false })
         .limit(10);
 
       if (gamesError) throw gamesError;
 
-      // Buscar desafios ativos
+      // Buscar desafios ativos do usuário
       const { data: challenges, error: challengesError } = await supabase
         .from('Desafios')
-        .select('*')
+        .select('*, Jogos!inner(user_id)')
+        .eq('Jogos.user_id', userId)
         .limit(10);
 
       if (challengesError) throw challengesError;
 
-      // Buscar estatísticas do usuário
-      const { data: stats, error: statsError } = await supabase
-        .from('user_stats')
-        .select('*')
-        .single();
+      // Obter contagem de jogos
+      const { count: gamesCount, error: gamesCountError } = await supabase
+        .from('Jogos')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
 
-      if (statsError) throw statsError;
+      if (gamesCountError) throw gamesCountError;
 
-      // Mapear os dados dos jogos incluindo o tempo de jogo
-      const mappedGames = games.map(game => {
-        // Verifica se o tempo é um número válido
-        const tempoJogo = game.jogo_tempo_jogo ? Number(game.jogo_tempo_jogo) : 0;
-        
-        return {
-          id: game.jogo_id,
-          title: game.jogo_nome,
-          image: game.jogo_imagem_url,
-          progress: game.jogo_status === 'Na Fila' 
-            ? 'Na Fila'
-            : `${game.jogo_status} - ${formatGameTime(game.jogo_tempo_jogo)}h`
-        };
-      });
+      // Obter contagem de desafios
+      const { count: challengesCount, error: challengesCountError } = await supabase
+        .from('Desafios')
+        .select('*, Jogos!inner(user_id)', { count: 'exact', head: true })
+        .eq('Jogos.user_id', userId);
+
+      if (challengesCountError) throw challengesCountError;
+
+      // Obter contagem de conquistas
+      const { count: trophiesCount, error: trophiesCountError } = await supabase
+        .from('Conquistas')
+        .select('*, Jogos!inner(user_id)', { count: 'exact', head: true })
+        .eq('Jogos.user_id', userId);
+
+      if (trophiesCountError) throw trophiesCountError;
+
+      // Mapear os dados dos jogos
+      const mappedGames = games.map(game => ({
+        id: game.jogo_id,
+        title: game.jogo_nome,
+        image: game.jogo_imagem_url,
+        progress: game.jogo_status === 'Na Fila' 
+          ? 'Na Fila'
+          : `${game.jogo_status} - ${formatGameTime(game.jogo_tempo_jogo)}h`
+      }));
 
       // Mapear os dados dos desafios
       const mappedChallenges = challenges.map(challenge => ({
@@ -99,9 +123,9 @@ const DashboardGamer = () => {
       setRecentGames(mappedGames);
       setActiveChallenges(mappedChallenges);
       setUserStats({
-        gamesCount: stats.games_count || 0,
-        challengesCount: stats.active_challenges_count || 0,
-        trophiesCount: stats.trophies_count || 0
+        gamesCount: gamesCount || 0,
+        challengesCount: challengesCount || 0,
+        trophiesCount: trophiesCount || 0
       });
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
