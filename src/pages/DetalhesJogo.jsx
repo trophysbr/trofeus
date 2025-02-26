@@ -30,6 +30,8 @@ import {
 } from '../styles/components/GameDetailsStyles';
 import styled from 'styled-components';
 import { supabase } from '../config/supabaseClient';
+import { toast } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 
 const LoadingContainer = {
   display: 'flex',
@@ -125,18 +127,36 @@ const DetalhesJogo = () => {
 
   const handleAddToLibrary = async () => {
     try {
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user.id;
+
+      // Verificar se o jogo já existe na biblioteca do usuário
+      const { data: existingGame, error: checkError } = await supabase
+        .from('Jogos')
+        .select('jogo_id')
+        .eq('id_igdb', gameData.id)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingGame) {
+        toast.error('Este jogo já está na sua biblioteca!');
+        return;
+      }
+
+      // Se não existir, prosseguir com a inserção
       const { data, error } = await supabase
         .from('Jogos')
         .insert([
           {
-            jogo_id: gameData.id,
             jogo_nome: gameData.name,
             jogo_imagem_url: gameData.cover?.url 
               ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${gameData.cover.url.split('/').pop()}`
               : '',
             jogo_status: 'Na Fila',
             jogo_tempo_jogo: '00:00:00',
-            user_id: (await supabase.auth.getUser()).data.user.id,
+            user_id: userId,
             jogo_historia: gameData.storyline || gameData.summary || '',
             jogo_ano_lancamento: gameData.first_release_date 
               ? new Date(gameData.first_release_date * 1000).getFullYear()
@@ -153,15 +173,44 @@ const DetalhesJogo = () => {
         ]);
 
       if (error) throw error;
-      alert('Jogo adicionado à biblioteca com sucesso!');
+      
+      // Exibir toast e redirecionar após 1 segundo
+      toast.success('Jogo adicionado à biblioteca com sucesso!');
+      setTimeout(() => {
+        navigate('/biblioteca');
+      }, 1000); // 1 segundo de delay para o usuário ver a mensagem
+
     } catch (error) {
       console.error('Erro ao adicionar jogo:', error);
-      alert('Erro ao adicionar jogo à biblioteca');
+      toast.error('Erro ao adicionar jogo à biblioteca');
     }
   };
 
   return (
     <DashboardContainer>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#363636',
+            color: '#fff',
+            fontSize: '1rem',
+            padding: '16px 24px',
+            minWidth: '300px',
+          },
+          success: {
+            style: {
+              background: '#4BB543',
+            },
+          },
+          error: {
+            style: {
+              background: '#ff4444',
+            },
+          },
+        }}
+      />
+      
       <Header>
         <WelcomeText>
           <h1>Detalhes do Jogo</h1>
