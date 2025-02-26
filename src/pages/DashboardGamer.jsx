@@ -1,0 +1,202 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Slider from 'react-slick';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import GameCard from '../components/GameCard';
+import ChallengeCard from '../components/ChallengeCard';
+import { supabase } from '../config/supabaseClient';
+import {
+  DashboardContainer,
+  CarouselContainer,
+  GameCardWrapper,
+  Header,
+  WelcomeText,
+  LevelInfo,
+  Level,
+  XP,
+  StatsGrid,
+  StatCard,
+  Section,
+  ChallengesGrid
+} from '../styles/components/DashboardStyles';
+
+const DashboardGamer = () => {
+  const [recentGames, setRecentGames] = useState([]);
+  const [activeChallenges, setActiveChallenges] = useState([]);
+  const [userStats, setUserStats] = useState({
+    gamesCount: 0,
+    challengesCount: 0,
+    trophiesCount: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const formatGameTime = (timeString) => {
+    if (!timeString) return '0';
+    
+    const [hours, minutes, seconds] = timeString.split(':');
+    const totalHours = parseInt(hours) + (parseInt(minutes) / 60) + (parseInt(seconds) / 3600);
+    return Math.round(totalHours);
+  };
+
+  const fetchData = async () => {
+    try {
+      // Buscar jogos recentes
+      const { data: games, error: gamesError } = await supabase
+        .from('Jogos')
+        .select('*')
+        .order('data_alteracao', { ascending: false })
+        .limit(10);
+
+      if (gamesError) throw gamesError;
+
+      // Buscar desafios ativos
+      const { data: challenges, error: challengesError } = await supabase
+        .from('Desafios')
+        .select('*')
+        .limit(10);
+
+      if (challengesError) throw challengesError;
+
+      // Buscar estatísticas do usuário
+      const { data: stats, error: statsError } = await supabase
+        .from('user_stats')
+        .select('*')
+        .single();
+
+      if (statsError) throw statsError;
+
+      // Mapear os dados dos jogos incluindo o tempo de jogo
+      const mappedGames = games.map(game => {
+        // Verifica se o tempo é um número válido
+        const tempoJogo = game.jogo_tempo_jogo ? Number(game.jogo_tempo_jogo) : 0;
+        
+        return {
+          id: game.jogo_id,
+          title: game.jogo_nome,
+          image: game.jogo_imagem_url,
+          progress: game.jogo_status === 'Na Fila' 
+            ? 'Na Fila'
+            : `${game.jogo_status} - ${formatGameTime(game.jogo_tempo_jogo)}h`
+        };
+      });
+
+      // Mapear os dados dos desafios
+      const mappedChallenges = challenges.map(challenge => ({
+        id: challenge.desafio_id,
+        game: challenge.desafio_nome,
+        title: challenge.desafio_nome,
+        progress: challenge.desafio_percentual,
+        daysLeft: challenge.desafio_dias_restantes,
+        difficulty: challenge.desafio_dificuldade
+      }));
+
+      setRecentGames(mappedGames);
+      setActiveChallenges(mappedChallenges);
+      setUserStats({
+        gamesCount: stats.games_count || 0,
+        challengesCount: stats.active_challenges_count || 0,
+        trophiesCount: stats.trophies_count || 0
+      });
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const settings = {
+    dots: false,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    draggable: true,
+    swipeToSlide: true,
+    arrows: true,
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: {
+          slidesToShow: 3,
+        }
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 2,
+        }
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          slidesToShow: 1,
+        }
+      }
+    ]
+  };
+
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
+
+  return (
+    <DashboardContainer>
+      <Header>
+        <WelcomeText>
+          <h1>Bem-vindo de volta, Jogador</h1>
+          <LevelInfo>
+            <Level>Nível 42</Level>
+            <XP>XP: 12,450</XP>
+          </LevelInfo>
+        </WelcomeText>
+      </Header>
+
+      <StatsGrid>
+        <StatCard onClick={() => navigate('/biblioteca')}>
+          <h2>{userStats.gamesCount}</h2>
+          <p>Jogos na coleção</p>
+        </StatCard>
+        <StatCard>
+          <h2>{userStats.challengesCount}</h2>
+          <p>Desafios ativos</p>
+        </StatCard>
+        <StatCard>
+          <h2>{userStats.trophiesCount}</h2>
+          <p>Troféus desbloqueados</p>
+        </StatCard>
+      </StatsGrid>
+
+      <Section style={{ marginBottom: '-2.0rem' }}>
+        <h2 style={{ marginBottom: '1.25rem', fontSize: '1.25rem' }}>Jogos Recentes</h2>
+        <CarouselContainer style={{ margin: '4px' }}>
+          <Slider {...settings}>
+            {recentGames.map(game => (
+              <div key={game.id} style={{ padding: '4px' }}>
+                <GameCardWrapper>
+                  <GameCard {...game} />
+                </GameCardWrapper>
+              </div>
+            ))}
+          </Slider>
+        </CarouselContainer>
+      </Section>
+
+      <Section style={{ marginTop: '1.0rem' }}>
+        <h2 style={{ marginBottom: '1.25rem', fontSize: '1.25rem' }}>Desafios Ativos</h2>
+        <ChallengesGrid style={{ gap: '0.5rem' }}>
+          {activeChallenges.map(challenge => (
+            <ChallengeCard key={challenge.id} {...challenge} />
+          ))}
+        </ChallengesGrid>
+      </Section>
+    </DashboardContainer>
+  );
+};
+
+export default DashboardGamer;
