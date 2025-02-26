@@ -194,8 +194,13 @@ const Login = () => {
         .select('*')
         .eq('email', user.email)
         .maybeSingle();
-
-      if (userError) throw userError;
+      
+        if (userError) {
+          console.error('Erro na consulta:', error.message);
+          if (error.code === 'PGRST116') {
+            console.log('Nenhum ou mais de um registro encontrado');
+          }
+        }
 
       if (!existingUser) {
         // 4. Se o usuário não existir, cria um novo registro
