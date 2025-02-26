@@ -42,34 +42,72 @@ const DashboardGamer = () => {
     trophiesCount: 0
   });
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
+  const [user, setUser] = useState(null);
   const [userName, setUserName] = useState('Jogador');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserId = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUserId(data.user.id);
+    const fetchUserAndUpdate = async () => {
+      try {
+        // 1. Obtém os dados do usuário autenticado
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
 
-      const { data: userData, error } = await supabase
-        .from('Usuarios')
-        .select('nome')
-        .eq('email', data.user.email)
-        .maybeSingle();
+        if (!user) {
+          navigate('/login'); // Redireciona para o login se o usuário não estiver autenticado
+          return;
+        }
 
-      if (!error && userData?.nome) {
-        const firstName = userData.nome.split(' ')[0];
-        setUserName(firstName);
+        setUser(user);
+
+        // 2. Verifica se o usuário já existe na tabela Usuarios
+        const { data: existingUser, error: queryError } = await supabase
+          .from('Usuarios')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle(); // Usa maybeSingle() para evitar erros se o usuário não existir
+
+        if (queryError) throw queryError;
+
+        if (!existingUser) {
+          // 3. Se o usuário não existir, cria um novo registro
+          const { error: insertError } = await supabase
+            .from('Usuarios')
+            .insert([
+              {
+                email: user.email,
+                nome: user.user_metadata.full_name || user.email,
+                dt_inclusao: new Date().toISOString(),
+                ultimo_login: new Date().toISOString(),
+                user_id: user.id,
+              },
+            ]);
+
+          if (insertError) throw insertError;
+        } else {
+          // 4. Se o usuário já existir, atualiza o último login
+          const { error: updateError } = await supabase
+            .from('Usuarios')
+            .update({ ultimo_login: new Date().toISOString() })
+            .eq('email', user.email);
+
+          if (updateError) throw updateError;
+        }
+      } catch (error) {
+        console.error('Erro ao buscar ou atualizar usuário:', error.message);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchUserId();
-  }, []);
+
+    fetchUserAndUpdate();
+  }, [navigate]);
 
   useEffect(() => {
-    if (userId) {
+    if (user) {
       fetchData();
     }
-  }, [userId]);
+  }, [user]);
 
   const formatGameTime = (timeString) => {
     if (!timeString) return '0';
@@ -85,7 +123,7 @@ const DashboardGamer = () => {
       const { data: games, error: gamesError } = await supabase
         .from('Jogos')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .order('data_alteracao', { ascending: false, nullsFirst: false })
         .order('data_inclusao', { ascending: false })
         .limit(10);
@@ -96,7 +134,7 @@ const DashboardGamer = () => {
       const { data: challenges, error: challengesError } = await supabase
         .from('Desafios')
         .select('*, Jogos!inner(user_id)')
-        .eq('Jogos.user_id', userId)
+        .eq('Jogos.user_id', user.id)
         .limit(10);
 
       if (challengesError) throw challengesError;
@@ -105,7 +143,7 @@ const DashboardGamer = () => {
       const { count: gamesCount, error: gamesCountError } = await supabase
         .from('Jogos')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+        .eq('user_id', user.id);
 
       if (gamesCountError) throw gamesCountError;
 
@@ -113,7 +151,7 @@ const DashboardGamer = () => {
       const { count: challengesCount, error: challengesCountError } = await supabase
         .from('Desafios')
         .select('*, Jogos!inner(user_id)', { count: 'exact', head: true })
-        .eq('Jogos.user_id', userId);
+        .eq('Jogos.user_id', user.id);
 
       if (challengesCountError) throw challengesCountError;
 
@@ -121,7 +159,7 @@ const DashboardGamer = () => {
       const { count: trophiesCount, error: trophiesCountError } = await supabase
         .from('Conquistas')
         .select('*, Jogos!inner(user_id)', { count: 'exact', head: true })
-        .eq('Jogos.user_id', userId);
+        .eq('Jogos.user_id', user.id);
 
       if (trophiesCountError) throw trophiesCountError;
 

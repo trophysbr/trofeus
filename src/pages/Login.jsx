@@ -171,65 +171,6 @@ const Login = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault(); // Previne o comportamento padrão do formulário
-    setLoading(true);
-    setError(null);
-
-    try {
-      // 1. Autentica o usuário com e-mail e senha
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // 2. Obtém os dados do usuário autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // 3. Verifica se o usuário já existe na tabela Usuarios
-      const { data: existingUser, error: userError } = await supabase
-        .from('Usuarios')
-        .select('*')
-        .eq('email', user.email)
-        .maybeSingle();
-
-      if (!existingUser) {
-        // 4. Se o usuário não existir, cria um novo registro
-        const { data: newUser, error: insertError } = await supabase
-          .from('Usuarios')
-          .insert([
-            {
-              email: user.email,
-              nome: user.email, // Usa o e-mail como nome, pois o nome não está disponível no login com e-mail/senha
-              dt_inclusao: new Date().toISOString(),
-              ultimo_login: new Date().toISOString(),
-              user_id: user.id,
-            },
-          ]);
-
-        if (insertError) throw insertError;
-      } else {
-        // 5. Se o usuário já existir, atualiza o último login
-        const { error: updateError } = await supabase
-          .from('Usuarios')
-          .update({ ultimo_login: new Date().toISOString() })
-          .eq('email', user.email);
-
-        if (updateError) throw updateError;
-      }
-
-      // 6. Redireciona para o DashboardGamer
-      navigate('/DashboardGamer');
-    } catch (error) {
-      setError('Email ou senha incorretos.');
-      console.error('Erro:', error.message);
-    } finally {
-      setLoading(false); // Desabilita o estado de carregamento
-    }
-  };
-
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null); // Limpa o erro antes de iniciar o login
@@ -252,49 +193,7 @@ const Login = () => {
       // 2. Aguarda um pequeno atraso para garantir que a autenticação seja concluída
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // 3. Obtém os dados do usuário autenticado
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      if (!user) {
-        throw new Error('Usuário não encontrado após autenticação.');
-      }
-
-      // 4. Verifica se o usuário já existe na tabela Usuarios
-      const { data: existingUser, error: queryError } = await supabase
-        .from('Usuarios')
-        .select('*')
-        .eq('email', user.email)
-        .maybeSingle(); // Usa maybeSingle() para evitar erros se o usuário não existir
-
-      if (queryError) throw queryError;
-
-      if (!existingUser) {
-        // 5. Se o usuário não existir, cria um novo registro
-        const { error: insertError } = await supabase
-          .from('Usuarios')
-          .insert([
-            {
-              email: user.email,
-              nome: user.user_metadata.full_name || user.email,
-              dt_inclusao: new Date().toISOString(),
-              ultimo_login: new Date().toISOString(),
-              user_id: user.id,
-            },
-          ]);
-
-        if (insertError) throw insertError;
-      } else {
-        // 6. Se o usuário já existir, atualiza o último login
-        const { error: updateError } = await supabase
-          .from('Usuarios')
-          .update({ ultimo_login: new Date().toISOString() })
-          .eq('email', user.email);
-
-        if (updateError) throw updateError;
-      }
-
-      // 7. Redireciona para o DashboardGamer
+      // 3. Redireciona para o DashboardGamer
       navigate('/DashboardGamer');
     } catch (error) {
       // Exibe a mensagem de erro apenas se o login falhar
@@ -304,6 +203,30 @@ const Login = () => {
       console.error('Erro:', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault(); // Previne o comportamento padrão do formulário
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Autentica o usuário com e-mail e senha
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // 2. Redireciona para o DashboardGamer
+      navigate('/DashboardGamer');
+    } catch (error) {
+      setError('Email ou senha incorretos.');
+      console.error('Erro:', error.message);
+    } finally {
+      setLoading(false); // Desabilita o estado de carregamento
     }
   };
 
