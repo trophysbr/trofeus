@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../config/supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { FaEnvelope, FaLock, FaUser } from 'react-icons/fa';
 
 const RegisterContainer = styled.div`
   display: flex;
@@ -89,39 +90,44 @@ const LoginLink = styled(Link)`
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError(null);
 
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Cadastra o usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: window.location.origin + '/biblioteca'
-        }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
-      // Mostrar mensagem de sucesso e redirecionar para login
-      alert('Cadastro realizado com sucesso! Por favor, verifique seu email.');
-      navigate('/login');
+      // 2. Insere o usuário na tabela Usuarios
+      const { data: userData, error: userError } = await supabase
+        .from('Usuarios')
+        .insert([
+          {
+            email,
+            nome,
+            dt_inclusao: new Date().toISOString(),
+            ultimo_login: new Date().toISOString(),
+          },
+        ]);
+
+      if (userError) throw userError;
+
+      // 3. Redireciona para o DashboardGamer
+      navigate('/DashboardGamer');
     } catch (error) {
-      setError('Erro ao criar conta. ' + error.message);
-      console.error('Erro:', error.message);
+      setError(error.message || 'Erro ao cadastrar. Tente novamente.');
+      console.error('Erro:', error);
     } finally {
       setLoading(false);
     }
@@ -134,27 +140,36 @@ const Register = () => {
         {error && <ErrorMessage>{error}</ErrorMessage>}
         
         <Form onSubmit={handleRegister}>
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="Confirmar Senha"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
+          <div>
+            <FaUser />
+            <Input
+              type="text"
+              placeholder="Nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <FaEnvelope />
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <FaLock />
+            <Input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
           <Button type="submit" disabled={loading}>
             {loading ? 'Criando conta...' : 'Criar Conta'}
           </Button>

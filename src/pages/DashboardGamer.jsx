@@ -20,6 +20,20 @@ import {
   Section,
   ChallengesGrid
 } from '../styles/components/DashboardStyles';
+import styled from 'styled-components';
+
+const WelcomeTextStyled = styled.div`
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    span {
+      background: linear-gradient(90deg, #6c5ce7, #ff7675);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+    }
+  }
+`;
 
 const DashboardGamer = () => {
   const [recentGames, setRecentGames] = useState([]);
@@ -31,12 +45,24 @@ const DashboardGamer = () => {
   });
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState('Jogador');
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserId = async () => {
       const { data } = await supabase.auth.getUser();
       setUserId(data.user.id);
+
+      const { data: userData, error } = await supabase
+        .from('Usuarios')
+        .select('nome')
+        .eq('email', data.user.email)
+        .single();
+
+      if (!error && userData?.nome) {
+        const firstName = userData.nome.split(' ')[0];
+        setUserName(firstName);
+      }
     };
     fetchUserId();
   }, []);
@@ -175,7 +201,9 @@ const DashboardGamer = () => {
     <DashboardContainer>
       <Header>
         <WelcomeText>
-          <h1>Bem-vindo de volta, Jogador</h1>
+          <h1>
+            Bem-vindo de volta, <span>{userName}</span>
+          </h1>
           <LevelInfo>
             <Level>Nível 42</Level>
             <XP>XP: 12,450</XP>

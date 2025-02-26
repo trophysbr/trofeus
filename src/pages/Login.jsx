@@ -177,19 +177,54 @@ const Login = () => {
     setError(null);
 
     try {
+      // 1. Autentica o usuário com e-mail e senha
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        setError('Email ou senha incorretos.');
+      if (error) throw error;
+
+      // 2. Obtém os dados do usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // 3. Verifica se o usuário já existe na tabela Usuarios
+      const { data: existingUser, error: userError } = await supabase
+        .from('Usuarios')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+
+      if (userError && userError.code !== 'PGRST116') throw userError; // Ignora erro de "nenhum resultado"
+
+      if (!existingUser) {
+        // 4. Se o usuário não existir, cria um novo registro
+        const { data: newUser, error: insertError } = await supabase
+          .from('Usuarios')
+          .insert([
+            {
+              email: user.email,
+              nome: user.email, // Usa o e-mail como nome, pois o nome não está disponível no login com e-mail/senha
+              dt_inclusao: new Date().toISOString(),
+              ultimo_login: new Date().toISOString(),
+            },
+          ]);
+
+        if (insertError) throw insertError;
       } else {
-        const { data: { user } } = await supabase.auth.getUser();
-        navigate('/DashboardGamer'); // Redireciona para /DashboardGamer
+        // 5. Se o usuário já existir, atualiza o último login
+        const { error: updateError } = await supabase
+          .from('Usuarios')
+          .update({ ultimo_login: new Date().toISOString() })
+          .eq('email', user.email);
+
+        if (updateError) throw updateError;
       }
+
+      // 6. Redireciona para o DashboardGamer
+      navigate('/DashboardGamer');
     } catch (error) {
-      setError('Erro ao fazer login. Tente novamente.');
+      setError('Email ou senha incorretos.');
       console.error('Erro:', error.message);
     } finally {
       setLoading(false); // Desabilita o estado de carregamento
@@ -201,23 +236,63 @@ const Login = () => {
     setError(null);
 
     try {
+      // 1. Autentica o usuário com o Google
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/DashboardGamer`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
-          }
-        }
+            prompt: 'consent',
+          },
+        },
       });
 
       if (error) throw error;
+
+      // 2. Obtém os dados do usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // 3. Verifica se o usuário já existe na tabela Usuarios
+      const { data: existingUser, error: userError } = await supabase
+        .from('Usuarios')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+
+      if (userError && userError.code !== 'PGRST116') throw userError; // Ignora erro de "nenhum resultado"
+
+      if (!existingUser) {
+        // 4. Se o usuário não existir, cria um novo registro
+        const { data: newUser, error: insertError } = await supabase
+          .from('Usuarios')
+          .insert([
+            {
+              email: user.email,
+              nome: user.user_metadata.full_name || user.email,
+              dt_inclusao: new Date().toISOString(),
+              ultimo_login: new Date().toISOString(),
+            },
+          ]);
+
+        if (insertError) throw insertError;
+      } else {
+        // 5. Se o usuário já existir, atualiza o último login
+        const { error: updateError } = await supabase
+          .from('Usuarios')
+          .update({ ultimo_login: new Date().toISOString() })
+          .eq('email', user.email);
+
+        if (updateError) throw updateError;
+      }
+
+      // 6. Redireciona para o DashboardGamer
+      navigate('/DashboardGamer');
     } catch (error) {
       setError('Erro ao fazer login com Google.');
       console.error('Erro:', error.message);
     } finally {
-      setLoading(false); // Desabilita o estado de carregamento
+      setLoading(false);
     }
   };
 
