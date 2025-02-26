@@ -159,13 +159,13 @@ const MeuJogo = () => {
   const [gameData, setGameData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({
-    status: null,
-    plataforma_jogada: null,
-    data_inicio: null,
-    data_conclusao: null,
-    dificuldade: null,
-    minha_nota: null,
-    tempo_jogado: null
+    status: '',
+    plataforma_jogada: '',
+    data_inicio: '',
+    data_conclusao: '',
+    dificuldade: '',
+    minha_nota: '',
+    tempo_jogado: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [dataError, setDataError] = useState('');
@@ -200,13 +200,13 @@ const MeuJogo = () => {
       if (error) throw error;
       setGameData(data);
       setEditedData({
-        status: data.jogo_status || null,
-        plataforma_jogada: data.jogo_plataforma_jogada || null,
-        data_inicio: data.jogo_data_inicio ? data.jogo_data_inicio.split('T')[0] : null,
-        data_conclusao: data.jogo_data_fim ? data.jogo_data_fim.split('T')[0] : null,
-        dificuldade: data.jogo_dificuldade || null,
-        minha_nota: data.jogo_nota || null,
-        tempo_jogado: data.jogo_tempo_jogo || null
+        status: data.jogo_status || '',
+        plataforma_jogada: data.jogo_plataforma_jogada || '',
+        data_inicio: data.jogo_data_inicio ? data.jogo_data_inicio.split('T')[0] : '',
+        data_conclusao: data.jogo_data_fim ? data.jogo_data_fim.split('T')[0] : '',
+        dificuldade: data.jogo_dificuldade || '',
+        minha_nota: data.jogo_nota || '',
+        tempo_jogado: data.jogo_tempo_jogo || ''
       });
     } catch (error) {
       console.error('Erro ao buscar dados do jogo:', error);
@@ -265,14 +265,17 @@ const MeuJogo = () => {
         tempoJogadoFormatado = `${hours.padStart(2, '0')}:${(minutes || '00').padStart(2, '0')}:00`;
       }
 
+      // Função para converter strings vazias em null
+      const convertEmptyToNull = (value) => (value === '' ? null : value);
+
       const updateData = {
-        jogo_status: editedData.status,
-        jogo_plataforma_jogada: editedData.plataforma_jogada,
-        jogo_data_inicio: editedData.data_inicio || null,
-        jogo_data_fim: editedData.data_conclusao || null,
-        jogo_dificuldade: editedData.dificuldade,
-        jogo_nota: editedData.minha_nota,
-        jogo_tempo_jogo: tempoJogadoFormatado || null,
+        jogo_status: convertEmptyToNull(editedData.status),
+        jogo_plataforma_jogada: convertEmptyToNull(editedData.plataforma_jogada),
+        jogo_data_inicio: convertEmptyToNull(editedData.data_inicio),
+        jogo_data_fim: convertEmptyToNull(editedData.data_conclusao),
+        jogo_dificuldade: convertEmptyToNull(editedData.dificuldade),
+        jogo_nota: convertEmptyToNull(editedData.minha_nota),
+        jogo_tempo_jogo: tempoJogadoFormatado,
         data_alteracao: new Date().toISOString()
       };
 
@@ -357,7 +360,7 @@ const MeuJogo = () => {
                     <Select
                       value={editedData.status || ''}
                       onChange={(e) => {
-                        setEditedData({...editedData, status: e.target.value || null});
+                        setEditedData({...editedData, status: e.target.value || ''});
                         setStatusError('');
                       }}
                       required
@@ -384,7 +387,7 @@ const MeuJogo = () => {
                 {isEditing ? (
                   <Select
                     value={editedData.plataforma_jogada || ''}
-                    onChange={(e) => setEditedData({...editedData, plataforma_jogada: e.target.value || null})}
+                    onChange={(e) => setEditedData({...editedData, plataforma_jogada: e.target.value || ''})}
                   >
                     <option value="">Selecione...</option>
                     <option value="Emulador">Emulador</option>
@@ -438,7 +441,7 @@ const MeuJogo = () => {
                 {isEditing ? (
                   <Select
                     value={editedData.dificuldade || ''}
-                    onChange={(e) => setEditedData({...editedData, dificuldade: e.target.value || null})}
+                    onChange={(e) => setEditedData({...editedData, dificuldade: e.target.value || ''})}
                   >
                     <option value="">Selecione...</option>
                     <option value="Fácil Demais">Fácil Demais</option>

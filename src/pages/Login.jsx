@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../config/supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
@@ -171,8 +171,8 @@ const Login = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleEmailLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (e) => {
+    e.preventDefault(); // Previne o comportamento padrão do formulário
     setLoading(true);
     setError(null);
 
@@ -182,22 +182,29 @@ const Login = () => {
         password,
       });
 
-      if (error) throw error;
-      navigate('/biblioteca');
+      if (error) {
+        setError('Email ou senha incorretos.');
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        navigate('/DashboardGamer'); // Redireciona para /DashboardGamer
+      }
     } catch (error) {
-      setError('Erro ao fazer login. Verifique suas credenciais.');
+      setError('Erro ao fazer login. Tente novamente.');
       console.error('Erro:', error.message);
     } finally {
-      setLoading(false);
+      setLoading(false); // Desabilita o estado de carregamento
     }
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/biblioteca`,
+          redirectTo: `${window.location.origin}/DashboardGamer`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -206,13 +213,11 @@ const Login = () => {
       });
 
       if (error) throw error;
-      
-      // O redirecionamento será feito automaticamente pelo Supabase
-      // Não precisamos fazer nada aqui pois o App.jsx já está configurado
-      // para redirecionar usuários autenticados
     } catch (error) {
       setError('Erro ao fazer login com Google.');
       console.error('Erro:', error.message);
+    } finally {
+      setLoading(false); // Desabilita o estado de carregamento
     }
   };
 
@@ -225,7 +230,7 @@ const Login = () => {
         </Logo>
         {error && <ErrorMessage>{error}</ErrorMessage>}
         
-        <Form onSubmit={handleEmailLogin}>
+        <Form onSubmit={handleLogin}>
           <InputGroup>
             <FaEnvelope />
             <Input
