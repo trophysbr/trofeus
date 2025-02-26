@@ -60,7 +60,12 @@ const DashboardGamer = () => {
 
         setUser(user);
 
-        // 2. Verifica se o usuário já existe na tabela Usuarios
+        // 2. Extrai o primeiro nome do usuário
+        const fullName = user.user_metadata.full_name || user.email;
+        const firstName = fullName.split(' ')[0]; // Pega o primeiro nome
+        setUserName(firstName);
+
+        // 3. Verifica se o usuário já existe na tabela Usuarios
         const { data: existingUser, error: queryError } = await supabase
           .from('Usuarios')
           .select('*')
@@ -70,13 +75,13 @@ const DashboardGamer = () => {
         if (queryError) throw queryError;
 
         if (!existingUser) {
-          // 3. Se o usuário não existir, cria um novo registro
+          // 4. Se o usuário não existir, cria um novo registro
           const { error: insertError } = await supabase
             .from('Usuarios')
             .insert([
               {
                 email: user.email,
-                nome: user.user_metadata.full_name || user.email,
+                nome: fullName,
                 dt_inclusao: new Date().toISOString(),
                 ultimo_login: new Date().toISOString(),
                 user_id: user.id,
@@ -85,7 +90,7 @@ const DashboardGamer = () => {
 
           if (insertError) throw insertError;
         } else {
-          // 4. Se o usuário já existir, atualiza o último login
+          // 5. Se o usuário já existir, atualiza o último login
           const { error: updateError } = await supabase
             .from('Usuarios')
             .update({ ultimo_login: new Date().toISOString() })
