@@ -194,13 +194,6 @@ const Login = () => {
         .select('*')
         .eq('email', user.email)
         .maybeSingle();
-      
-        if (userError) {
-          console.error('Erro na consulta:', error.message);
-          if (error.code === 'PGRST116') {
-            console.log('Nenhum ou mais de um registro encontrado');
-          }
-        }
 
       if (!existingUser) {
         // 4. Se o usuário não existir, cria um novo registro
@@ -212,6 +205,7 @@ const Login = () => {
               nome: user.email, // Usa o e-mail como nome, pois o nome não está disponível no login com e-mail/senha
               dt_inclusao: new Date().toISOString(),
               ultimo_login: new Date().toISOString(),
+              user_id: user.id,
             },
           ]);
 
@@ -242,7 +236,7 @@ const Login = () => {
 
     try {
       // 1. Autentica o usuário com o Google
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/DashboardGamer`,
@@ -253,28 +247,31 @@ const Login = () => {
         },
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
       // 2. Aguarda um pequeno atraso para garantir que a autenticação seja concluída
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      console.log('Autenticação concluída');
-
       // 3. Obtém os dados do usuário autenticado
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      if (!user) {
+        throw new Error('Usuário não encontrado após autenticação.');
+      }
 
       // 4. Verifica se o usuário já existe na tabela Usuarios
-      const { data: existingUser, error: userError } = await supabase
+      const { data: existingUser, error: queryError } = await supabase
         .from('Usuarios')
         .select('*')
         .eq('email', user.email)
         .maybeSingle(); // Usa maybeSingle() para evitar erros se o usuário não existir
 
-      if (userError) throw userError;
+      if (queryError) throw queryError;
 
       if (!existingUser) {
         // 5. Se o usuário não existir, cria um novo registro
-        const { data: newUser, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('Usuarios')
           .insert([
             {
@@ -282,6 +279,7 @@ const Login = () => {
               nome: user.user_metadata.full_name || user.email,
               dt_inclusao: new Date().toISOString(),
               ultimo_login: new Date().toISOString(),
+              user_id: user.id,
             },
           ]);
 
@@ -301,7 +299,7 @@ const Login = () => {
     } catch (error) {
       // Exibe a mensagem de erro apenas se o login falhar
       if (error.message !== 'OAuth login cancelled') {
-        setError('Erro ao fazer login com Google.');
+        setError('Erro ao fazer login com Google: ' + error.message);
       }
       console.error('Erro:', error.message);
     } finally {
