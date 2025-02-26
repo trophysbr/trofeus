@@ -50,6 +50,7 @@ const MinhaBiblioteca = () => {
       const { data, error } = await supabase
         .from('Jogos')
         .select('*')
+        .eq('user_id', (await supabase.auth.getUser()).data.user.id)
         .order('jogo_nome', { ascending: true });
 
       if (error) throw error;
