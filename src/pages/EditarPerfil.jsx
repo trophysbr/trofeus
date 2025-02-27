@@ -239,7 +239,20 @@ const EditarPerfil = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
+    
+    // Criar data considerando que a string está em UTC
+    const date = new Date(dateString);
+    
+    // Formatar para o padrão brasileiro
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'America/Sao_Paulo' // Definir fuso horário brasileiro
+    });
   };
 
   if (loading) {

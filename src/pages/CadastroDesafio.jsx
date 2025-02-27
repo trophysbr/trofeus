@@ -311,8 +311,8 @@ const CadastroDesafio = () => {
     desafio_recompensa: '',
     desafio_percentual: 0,
     desafio_status: '',
-    desafio_inicio: '',
-    desafio_fim: ''
+    desafio_inicio: null,
+    desafio_fim: null
   });
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -345,9 +345,15 @@ const CadastroDesafio = () => {
     if (editingDesafio) {
       setIsEditing(true);
       const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toISOString().slice(0, 16);
+        if (!dateString) return null;
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) return null;
+          return date;
+        } catch (error) {
+          console.error('Error parsing date:', error);
+          return null;
+        }
       };
 
       setFormData({
@@ -375,8 +381,8 @@ const CadastroDesafio = () => {
         desafio_recompensa: '',
         desafio_percentual: 0,
         desafio_status: '',
-        desafio_inicio: '',
-        desafio_fim: ''
+        desafio_inicio: null,
+        desafio_fim: null
       });
     }
   }, [editingDesafio]);
@@ -392,10 +398,24 @@ const CadastroDesafio = () => {
   };
 
   const handleDateChange = (date, field) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: date ? date.toISOString().slice(0, 16) : ''
-    }));
+    if (!date) {
+      setFormData(prev => ({ ...prev, [field]: null }));
+      return;
+    }
+
+    try {
+      const localDate = new Date(date);
+      if (isNaN(localDate.getTime())) {
+        console.error('Invalid date:', date);
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        [field]: localDate
+      }));
+    } catch (error) {
+      console.error('Error handling date:', error);
+    }
   };
 
   const handleDelete = async () => {
@@ -418,6 +438,18 @@ const CadastroDesafio = () => {
     setShowDeleteModal(false);
   };
 
+  const formatDateForSubmit = (date) => {
+    if (!date) return null;
+    try {
+      const localDate = new Date(date);
+      if (isNaN(localDate.getTime())) return null;
+      return localDate.toISOString();
+    } catch (error) {
+      console.error('Error formatting date for submit:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -437,8 +469,8 @@ const CadastroDesafio = () => {
       desafio_conclusao: formData.desafio_conclusao || null,
       desafio_percentual: formData.desafio_percentual || 0,
       desafio_status: formData.desafio_status || null,
-      desafio_inicio: formData.desafio_inicio,
-      desafio_fim: formData.desafio_fim
+      desafio_inicio: formatDateForSubmit(formData.desafio_inicio),
+      desafio_fim: formatDateForSubmit(formData.desafio_fim)
     };
 
     try {
@@ -622,7 +654,7 @@ const CadastroDesafio = () => {
                     <DatePickerContainer>
                       <DatePickerInput>
                         <DatePicker
-                          selected={formData.desafio_inicio ? new Date(formData.desafio_inicio) : null}
+                          selected={formData.desafio_inicio}
                           onChange={(date) => handleDateChange(date, 'desafio_inicio')}
                           showTimeSelect
                           timeFormat="HH:mm"
@@ -643,7 +675,7 @@ const CadastroDesafio = () => {
                     <DatePickerContainer>
                       <DatePickerInput>
                         <DatePicker
-                          selected={formData.desafio_fim ? new Date(formData.desafio_fim) : null}
+                          selected={formData.desafio_fim}
                           onChange={(date) => handleDateChange(date, 'desafio_fim')}
                           showTimeSelect
                           timeFormat="HH:mm"
