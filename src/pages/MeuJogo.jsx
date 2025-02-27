@@ -13,6 +13,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
 import { Toaster } from 'react-hot-toast';
+import Footer from '../components/Footer';
 
 const GameContainer = styled.div`
   padding: 2rem;
@@ -151,6 +152,12 @@ const BackButton = styled.button`
   &:hover {
     opacity: 0.8;
   }
+`;
+
+const FooterContainer = styled.footer`
+  text-align: center;
+  padding: 10px;
+  background-color: #16213e;
 `;
 
 const MeuJogo = () => {
@@ -570,6 +577,10 @@ const MeuJogo = () => {
           <Value>{gameData.jogo_historia}</Value>
         </InfoItem>
       </GameContainer>
+
+      <FooterContainer>
+        <Footer />
+      </FooterContainer>
     </DashboardContainer>
   );
 };

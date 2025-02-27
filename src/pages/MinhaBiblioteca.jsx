@@ -28,10 +28,17 @@ import { useNavigate } from 'react-router-dom';
 import BibliotecaSearch from '../components/BibliotecaSearch';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Footer from '../components/Footer';
 
 const SearchWrapper = styled.div`
   width: 500px;
   margin-right: 1rem;
+`;
+
+const FooterContainer = styled.footer`
+  text-align: center;
+  padding: 10px;
+  background-color: #16213e;
 `;
 
 const MinhaBiblioteca = () => {
@@ -209,6 +216,10 @@ const MinhaBiblioteca = () => {
           ))}
         </GamesGrid>
       </LibraryContainer>
+
+      <FooterContainer>
+        <Footer />
+      </FooterContainer>
     </DashboardContainer>
   );
 };

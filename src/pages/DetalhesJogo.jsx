@@ -33,6 +33,7 @@ import { supabase } from '../config/supabaseClient';
 import { toast } from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
+import Footer from '../components/Footer';
 
 const LoadingContainer = {
   display: 'flex',
@@ -91,6 +92,12 @@ const BackButton = styled.button`
   &:hover {
     opacity: 0.8;
   }
+`;
+
+const FooterContainer = styled.footer`
+  text-align: center;
+  padding: 10px;
+  background-color: #16213e;
 `;
 
 const DetalhesJogo = () => {
@@ -314,6 +321,10 @@ const DetalhesJogo = () => {
           </GameDescription>
         </Section>
       </GameDetailsContainer>
+
+      <FooterContainer>
+        <Footer />
+      </FooterContainer>
     </DashboardContainer>
   );
 };

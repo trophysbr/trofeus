@@ -66,6 +66,10 @@ const Header = () => {
     }
   };
 
+  const handleRedirect = () => {
+    navigate('/MeusDesafios');
+  };
+
   return (
     <HeaderContainer>
       <Logo>🏆 Trophys</Logo>
@@ -75,9 +79,11 @@ const Header = () => {
         </SearchContainer>
         <IconButton><FaHome onClick={handleHomeClick} style={{ cursor: 'pointer' }} /></IconButton>
         <IconButton><FaTrophy /></IconButton>
-        <IconButton><FaStar /></IconButton>
+        <IconButton><FaStar onClick={handleRedirect} style={{ cursor: 'pointer' }} /></IconButton>
         <IconButton><FaBell /></IconButton>
-        <IconButton><FaUser /></IconButton>
+        <IconButton onClick={() => navigate('/editar-perfil')}>
+          <FaUser />
+        </IconButton>
         <IconButton><FaSignOutAlt onClick={handleLogout} style={{ cursor: 'pointer' }} /></IconButton>
       </NavIcons>
     </HeaderContainer>

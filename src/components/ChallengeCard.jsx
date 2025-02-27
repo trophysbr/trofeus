@@ -1,82 +1,77 @@
 import styled from 'styled-components';
 
-const ChallengeCard = ({ game, title, progress, daysLeft, difficulty }) => {
-  return (
-    <CardContainer>
-      <GameTitle>{game}</GameTitle>
-      <ChallengeTitle>{title}</ChallengeTitle>
-      <ProgressBar>
-        <Progress width={progress} />
-      </ProgressBar>
-      <InfoRow>
-        <ProgressText>Progresso: {progress}%</ProgressText>
-        <DaysLeft>{daysLeft} dias restantes</DaysLeft>
-      </InfoRow>
-      <DifficultyBadge difficulty={difficulty}>{difficulty}</DifficultyBadge>
-    </CardContainer>
-  );
-};
-
-const CardContainer = styled.div`
-  background-color: #1e1e2e;
-  padding: 1.5rem;
+const Card = styled.div`
+  background: rgba(45, 45, 61, 0.7);
+  padding: 20px;
   border-radius: 8px;
-  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  }
 `;
 
 const GameTitle = styled.h3`
-  margin: 0;
   font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  color: #6366f1;
+  margin: 0 0 0.5rem 0;
 `;
 
 const ChallengeTitle = styled.h4`
-  margin: 0;
-  color: #a0a0a0;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-`;
-
-const ProgressBar = styled.div`
-  width: 100%;
-  height: 4px;
-  background-color: #2d2d3d;
-  border-radius: 2px;
-  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: #f3f4f6;
+  margin: 0 0 1rem 0;
 `;
 
 const Progress = styled.div`
-  width: ${props => props.width}%;
+  margin-bottom: 10px;
+`;
+
+const ProgressBar = styled.div`
+  background-color: #374151;
+  height: 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  background-color: #6366f1;
   height: 100%;
-  background-color: #6c5ce7;
-  border-radius: 2px;
+  width: ${props => props.progress}%;
   transition: width 0.3s ease;
 `;
 
-const InfoRow = styled.div`
+const Info = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  color: #9ca3af;
   font-size: 0.875rem;
 `;
 
-const ProgressText = styled.span`
-  color: #a0a0a0;
-`;
-
-const DaysLeft = styled.span`
-  color: #a0a0a0;
-`;
-
-const DifficultyBadge = styled.span`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  background-color: ${props => 
-    props.difficulty === 'Expert' ? '#e74c3c' : '#6c5ce7'};
-`;
+const ChallengeCard = ({ game, title, progress, daysLeft, difficulty, onClick }) => {
+  return (
+    <Card onClick={onClick}>
+      <GameTitle>{game}</GameTitle>
+      <ChallengeTitle>{title}</ChallengeTitle>
+      <Progress>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+          <span>Progresso</span>
+          <span>{progress}%</span>
+        </div>
+        <ProgressBar>
+          <ProgressFill progress={progress} />
+        </ProgressBar>
+      </Progress>
+      <Info>
+        <span>{daysLeft} dias restantes</span>
+        <span>Dificuldade: {difficulty}</span>
+      </Info>
+    </Card>
+  );
+};
 
 export default ChallengeCard; 

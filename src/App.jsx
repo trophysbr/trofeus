@@ -10,6 +10,9 @@ import CadastroJogo from './pages/CadastroJogo';
 import DetalhesJogo from './pages/DetalhesJogo';
 import GlobalStyles from './styles/GlobalStyles';
 import MeuJogo from './pages/MeuJogo';
+import MeusDesafios from './pages/MeusDesafios';
+import CadastroDesafio from './pages/CadastroDesafio';
+import EditarPerfil from './pages/EditarPerfil';
 
 const App = () => {
   const [session, setSession] = useState(null);
@@ -79,6 +82,21 @@ const App = () => {
         <Route path="/meu-jogo" element={
           <PrivateRoute>
             <MeuJogo />
+          </PrivateRoute>
+        } />
+        <Route path="/MeusDesafios" element={
+          <PrivateRoute>
+            <MeusDesafios />
+          </PrivateRoute>
+        } />
+        <Route path="/CadastroDesafio" element={
+          <PrivateRoute>
+            <CadastroDesafio />
+          </PrivateRoute>
+        } />
+        <Route path="/editar-perfil" element={
+          <PrivateRoute>
+            <EditarPerfil />
           </PrivateRoute>
         } />
       </Routes>

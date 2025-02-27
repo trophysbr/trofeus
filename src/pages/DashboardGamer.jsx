@@ -21,6 +21,7 @@ import {
   ChallengesGrid
 } from '../styles/components/DashboardStyles';
 import styled from 'styled-components';
+import Footer from '../components/Footer';
 
 const WelcomeTextStyled = styled.div`
   h1 {
@@ -31,6 +32,12 @@ const WelcomeTextStyled = styled.div`
       font-weight: bold;
     }
   }
+`;
+
+const FooterContainer = styled.footer`
+  text-align: center;
+  padding: 10px;
+  background-color: #16213e;
 `;
 
 const DashboardGamer = () => {
@@ -135,11 +142,18 @@ const DashboardGamer = () => {
 
       if (gamesError) throw gamesError;
 
-      // Buscar desafios ativos do usuário
+      // Buscar desafios ativos do usuário com o nome do jogo
       const { data: challenges, error: challengesError } = await supabase
         .from('Desafios')
-        .select('*, Jogos!inner(user_id)')
+        .select(`
+          *,
+          Jogos!inner (
+            user_id,
+            jogo_nome
+          )
+        `)
         .eq('Jogos.user_id', user.id)
+        .order('desafio_inicio', { ascending: false })
         .limit(10);
 
       if (challengesError) throw challengesError;
@@ -182,11 +196,16 @@ const DashboardGamer = () => {
       // Mapear os dados dos desafios
       const mappedChallenges = challenges.map(challenge => ({
         id: challenge.desafio_id,
-        game: challenge.desafio_nome,
+        game: challenge.Jogos.jogo_nome,
         title: challenge.desafio_nome,
         progress: challenge.desafio_percentual,
         daysLeft: challenge.desafio_dias_restantes,
-        difficulty: challenge.desafio_dificuldade
+        difficulty: challenge.desafio_dificuldade,
+        onClick: () => navigate('/CadastroDesafio', { 
+          state: { 
+            desafio: challenge 
+          }
+        })
       }));
 
       setRecentGames(mappedGames);
@@ -257,7 +276,7 @@ const DashboardGamer = () => {
           <h2>{userStats.gamesCount}</h2>
           <p>Jogos na coleção</p>
         </StatCard>
-        <StatCard>
+        <StatCard onClick={() => navigate('/MeusDesafios')}>
           <h2>{userStats.challengesCount}</h2>
           <p>Desafios ativos</p>
         </StatCard>
@@ -290,6 +309,10 @@ const DashboardGamer = () => {
           ))}
         </ChallengesGrid>
       </Section>
+
+      <FooterContainer>
+        <Footer />
+      </FooterContainer>
     </DashboardContainer>
   );
 };

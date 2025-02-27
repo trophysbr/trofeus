@@ -16,6 +16,14 @@ import {
   ImagePreview,
   ErrorMessage
 } from '../styles/components/FormStyles';
+import Footer from '../components/Footer';
+import styled from 'styled-components';
+
+const FooterContainer = styled.footer`
+  text-align: center;
+  padding: 10px;
+  background-color: #16213e;
+`;
 
 const CadastroJogo = () => {
   const navigate = useNavigate();
@@ -204,6 +212,10 @@ const CadastroJogo = () => {
           {loading ? 'Adicionando...' : 'Adicionar à Biblioteca'}
         </Button>
       </FormContainer>
+
+      <FooterContainer>
+        <Footer />
+      </FooterContainer>
     </DashboardContainer>
   );
 };
