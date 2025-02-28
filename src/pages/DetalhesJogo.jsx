@@ -78,19 +78,23 @@ const AddButton = styled.button`
 `;
 
 const BackButton = styled.button`
-  background: none;
+  background-color: transparent;
+  color: #6C5CE7;
   border: none;
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
   padding: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   transition: opacity 0.2s;
 
   &:hover {
     opacity: 0.8;
+  }
+
+  svg {
+    font-size: 1.2rem;
   }
 `;
 
@@ -105,6 +109,36 @@ const DetalhesJogo = () => {
   const navigate = useNavigate();
   const [gameData, setGameData] = useState(null);
   const [isLoading, setIsLoading] = useState(location.state?.isLoading ?? true);
+  const [userLevel, setUserLevel] = useState(0);
+  const [userXP, setUserXP] = useState(0);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        if (user) {
+          const { data: userData, error: userDataError } = await supabase
+            .from('Usuarios')
+            .select('level, xp')
+            .eq('user_id', user.id)
+            .single();
+
+          if (userDataError) throw userDataError;
+
+          if (userData) {
+            setUserLevel(userData.level || 0);
+            setUserXP(userData.xp || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados do usuário:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     // Adiciona os keyframes ao head do documento
@@ -246,8 +280,8 @@ const DetalhesJogo = () => {
             <h1>Detalhes do Jogo</h1>
           </div>
           <LevelInfo>
-            <Level>Nível 42</Level>
-            <XP>XP: 12,450</XP>
+            <Level>Nível {userLevel}</Level>
+            <XP>XP: {userXP.toLocaleString()}</XP>
           </LevelInfo>
         </WelcomeText>
       </Header>

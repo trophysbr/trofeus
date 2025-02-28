@@ -349,7 +349,19 @@ const CadastroDesafio = () => {
         try {
           const date = new Date(dateString);
           if (isNaN(date.getTime())) return null;
-          return date;
+          
+          // Ajustar para o fuso horário de São Paulo (UTC-3)
+          const offset = -3;
+          const spDate = new Date(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            date.getUTCHours() + offset, // Adicionar offset para exibir no horário local
+            date.getUTCMinutes(),
+            date.getUTCSeconds()
+          );
+          
+          return spDate;
         } catch (error) {
           console.error('Error parsing date:', error);
           return null;
@@ -420,6 +432,22 @@ const CadastroDesafio = () => {
 
   const handleDelete = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Se o desafio estava concluído, remover XP
+      if (editingDesafio.desafio_status === 'Concluído') {
+        const { data, error: xpError } = await supabase
+          .rpc('update_user_xp', {
+            user_id_param: user.id,
+            xp_gain_param: -5
+          });
+
+        if (xpError) {
+          console.error('Erro ao atualizar XP:', xpError);
+          toast.warning('Desafio excluído, mas houve um erro ao atualizar o XP');
+        }
+      }
+
       const { error } = await supabase
         .from('Desafios')
         .delete()
@@ -443,7 +471,16 @@ const CadastroDesafio = () => {
     try {
       const localDate = new Date(date);
       if (isNaN(localDate.getTime())) return null;
-      return localDate.toISOString();
+
+      // Ajustar para UTC-3 de forma simples
+      const year = localDate.getFullYear();
+      const month = String(localDate.getMonth() + 1).padStart(2, '0');
+      const day = String(localDate.getDate()).padStart(2, '0');
+      const hours = String(localDate.getHours()).padStart(2, '0');
+      const minutes = String(localDate.getMinutes()).padStart(2, '0');
+      const seconds = String(localDate.getSeconds()).padStart(2, '0');
+
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}-03:00`;
     } catch (error) {
       console.error('Error formatting date for submit:', error);
       return null;
@@ -475,6 +512,7 @@ const CadastroDesafio = () => {
 
     try {
       let response;
+      const { data: { user } } = await supabase.auth.getUser();
       
       if (editingDesafio) {
         response = await supabase
@@ -483,6 +521,21 @@ const CadastroDesafio = () => {
           .eq('desafio_id', editingDesafio.desafio_id);
           
         if (response.error) throw response.error;
+
+        // Verificar se o status mudou para Concluído
+        if (formData.desafio_status === 'Concluído' && editingDesafio.desafio_status !== 'Concluído') {
+          // Chamar a função para adicionar XP
+          const { data, error: xpError } = await supabase
+            .rpc('update_user_xp', {
+              user_id_param: user.id,
+              xp_gain_param: 5
+            });
+
+          if (xpError) {
+            console.error('Erro ao atualizar XP:', xpError);
+            toast.warning('Desafio salvo, mas houve um erro ao atualizar o XP');
+          }
+        }
         
         await toast.promise(
           Promise.resolve(),
@@ -498,6 +551,21 @@ const CadastroDesafio = () => {
           .insert([dataToSubmit]);
           
         if (response.error) throw response.error;
+
+        // Se o novo desafio já está como Concluído
+        if (formData.desafio_status === 'Concluído') {
+          // Chamar a função para adicionar XP
+          const { data, error: xpError } = await supabase
+            .rpc('update_user_xp', {
+              userid: user.id,
+              xp_value: 5
+            });
+
+          if (xpError) {
+            console.error('Erro ao atualizar XP:', xpError);
+            toast.warning('Desafio salvo, mas houve um erro ao atualizar o XP');
+          }
+        }
         
         await toast.promise(
           Promise.resolve(),
@@ -641,7 +709,7 @@ const CadastroDesafio = () => {
                       onChange={handleChange}
                     >
                       <option value="">Selecione...</option>
-                      <option value="Na Fila">Na Fila</option>
+                      <option value="Não Iniciado">Não Iniciado</option>
                       <option value="Em Progresso">Em Progresso</option>
                       <option value="Concluído">Concluído</option>
                     </Select>

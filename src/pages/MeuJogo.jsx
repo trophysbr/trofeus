@@ -138,19 +138,23 @@ const Rating = styled.div`
 `;
 
 const BackButton = styled.button`
-  background: none;
+  background-color: transparent;
+  color: #6C5CE7;
   border: none;
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
   padding: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   transition: opacity 0.2s;
 
   &:hover {
     opacity: 0.8;
+  }
+
+  svg {
+    font-size: 1.2rem;
   }
 `;
 
@@ -160,11 +164,102 @@ const FooterContainer = styled.footer`
   background-color: #16213e;
 `;
 
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const DeleteButton = styled.button`
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #cc3333;
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background-color: #2C2E40;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 400px;
+`;
+
+const ModalTitle = styled.h2`
+  color: white;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+`;
+
+const ModalText = styled.p`
+  color: white;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+`;
+
+const ModalButtons = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+`;
+
+const CancelButton = styled.button`
+  background-color: transparent;
+  color: white;
+  border: 1px solid #6c5ce7;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: rgba(108, 92, 231, 0.1);
+  }
+`;
+
+const ConfirmButton = styled.button`
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #cc3333;
+  }
+`;
+
 const MeuJogo = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [gameData, setGameData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [userLevel, setUserLevel] = useState(0);
+  const [userXP, setUserXP] = useState(0);
   const [editedData, setEditedData] = useState({
     status: '',
     plataforma_jogada: '',
@@ -178,6 +273,7 @@ const MeuJogo = () => {
   const [dataError, setDataError] = useState('');
   const [statusError, setStatusError] = useState('');
   const [notaError, setNotaError] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (!location.state?.gameId) {
@@ -186,6 +282,34 @@ const MeuJogo = () => {
     }
     fetchGameData(location.state.gameId);
   }, [location.state, navigate]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        if (user) {
+          const { data: userData, error: userDataError } = await supabase
+            .from('Usuarios')
+            .select('level, xp')
+            .eq('user_id', user.id)
+            .single();
+
+          if (userDataError) throw userDataError;
+
+          if (userData) {
+            setUserLevel(userData.level || 0);
+            setUserXP(userData.xp || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados do usuário:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const formatarData = (data) => {
     if (!data) return 'Não definida';
@@ -303,10 +427,81 @@ const MeuJogo = () => {
     }
   };
 
+  const handleDelete = async () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      // Verificar se o jogo estava concluído antes de excluir
+      const wasCompleted = gameData.jogo_status === 'Concluído';
+
+      const { error } = await supabase
+        .from('Jogos')
+        .delete()
+        .eq('jogo_id', gameData.jogo_id);
+
+      if (error) throw error;
+
+      // Se o jogo estava concluído, atualizar o XP (-5)
+      if (wasCompleted) {
+        const { error: xpError } = await supabase
+          .rpc('update_user_xp', { xp_change: -5 });
+        
+        if (xpError) throw xpError;
+      }
+
+      setShowDeleteModal(false);
+      toast.success('Jogo excluído com sucesso!', {
+        duration: 2000,
+        style: {
+          background: '#4BB543',
+          color: '#fff',
+          fontSize: '1rem'
+        }
+      });
+
+      // Redirecionar após 2 segundos
+      setTimeout(() => {
+        navigate('/biblioteca');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Erro ao excluir jogo:', error);
+      toast.error('Erro ao excluir jogo. Por favor, tente novamente.', {
+        duration: 3000,
+        style: {
+          background: '#ff4444',
+          color: '#fff',
+          fontSize: '1rem'
+        }
+      });
+    }
+  };
+
   if (!gameData) return <div>Carregando...</div>;
 
   return (
     <DashboardContainer>
+      {showDeleteModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalTitle>Confirmar Exclusão</ModalTitle>
+            <ModalText>
+              Tem certeza que deseja excluir o jogo "{gameData.jogo_nome}"? Esta ação não pode ser desfeita.
+            </ModalText>
+            <ModalButtons>
+              <CancelButton onClick={() => setShowDeleteModal(false)}>
+                Cancelar
+              </CancelButton>
+              <ConfirmButton onClick={confirmDelete}>
+                Confirmar Exclusão
+              </ConfirmButton>
+            </ModalButtons>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+      
       <Toaster
         position="top-right"
         toastOptions={{
@@ -340,8 +535,8 @@ const MeuJogo = () => {
             <h1>Meu Jogo</h1>
           </div>
           <LevelInfo>
-            <Level>Nível 42</Level>
-            <XP>XP: 12,450</XP>
+            <Level>Nível {userLevel}</Level>
+            <XP>XP: {userXP.toLocaleString()}</XP>
           </LevelInfo>
         </WelcomeText>
       </Header>
@@ -350,11 +545,16 @@ const MeuJogo = () => {
         <GameHeader>
           <ImageSection>
             <GameImage src={gameData.jogo_imagem_url} alt={gameData.jogo_nome} />
-            {!isEditing ? (
-              <Button onClick={handleEdit}>Editar</Button>
-            ) : (
-              <Button onClick={handleSave}>Salvar</Button>
-            )}
+            <ButtonContainer>
+              {!isEditing ? (
+                <>
+                  <Button onClick={handleEdit}>Editar</Button>
+                  <DeleteButton onClick={handleDelete}>Excluir</DeleteButton>
+                </>
+              ) : (
+                <Button onClick={handleSave}>Salvar</Button>
+              )}
+            </ButtonContainer>
           </ImageSection>
 
           <InfoSection>

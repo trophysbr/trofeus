@@ -51,6 +51,8 @@ const DashboardGamer = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [userName, setUserName] = useState('Jogador');
+  const [userLevel, setUserLevel] = useState(0);
+  const [userXP, setUserXP] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,28 +63,29 @@ const DashboardGamer = () => {
         if (userError) throw userError;
 
         if (!user) {
-          navigate('/login'); // Redireciona para o login se o usuário não estiver autenticado
+          navigate('/login');
           return;
         }
 
         setUser(user);
 
-        // 2. Extrai o primeiro nome do usuário
-        const fullName = user.user_metadata.full_name || user.email;
-        const firstName = fullName.split(' ')[0]; // Pega o primeiro nome
-        setUserName(firstName);
-
-        // 3. Verifica se o usuário já existe na tabela Usuarios
-        const { data: existingUser, error: queryError } = await supabase
+        // 2. Buscar dados do usuário incluindo level e xp
+        const { data: userData, error: userDataError } = await supabase
           .from('Usuarios')
-          .select('*')
-          .eq('email', user.email)
-          .maybeSingle(); // Usa maybeSingle() para evitar erros se o usuário não existir
+          .select('nome, level, xp')
+          .eq('user_id', user.id)
+          .single();
 
-        if (queryError) throw queryError;
+        if (userDataError) throw userDataError;
 
-        if (!existingUser) {
-          // 4. Se o usuário não existir, cria um novo registro
+        if (userData) {
+          const firstName = userData.nome.split(' ')[0];
+          setUserName(firstName);
+          setUserLevel(userData.level || 0);
+          setUserXP(userData.xp || 0);
+        } else {
+          // 3. Se o usuário não existir, cria um novo registro
+          const fullName = user.user_metadata.full_name || user.email;
           const { error: insertError } = await supabase
             .from('Usuarios')
             .insert([
@@ -92,18 +95,17 @@ const DashboardGamer = () => {
                 dt_inclusao: new Date().toISOString(),
                 ultimo_login: new Date().toISOString(),
                 user_id: user.id,
+                level: 0,
+                xp: 0
               },
             ]);
 
           if (insertError) throw insertError;
-        } else {
-          // 5. Se o usuário já existir, atualiza o último login
-          const { error: updateError } = await supabase
-            .from('Usuarios')
-            .update({ ultimo_login: new Date().toISOString() })
-            .eq('email', user.email);
-
-          if (updateError) throw updateError;
+          
+          const firstName = fullName.split(' ')[0];
+          setUserName(firstName);
+          setUserLevel(0);
+          setUserXP(0);
         }
       } catch (error) {
         console.error('Erro ao buscar ou atualizar usuário:', error.message);
@@ -265,8 +267,8 @@ const DashboardGamer = () => {
             Bem-vindo de volta, <span>{userName}</span>
           </h1>
           <LevelInfo>
-            <Level>Nível 42</Level>
-            <XP>XP: 12,450</XP>
+            <Level>Nível {userLevel}</Level>
+            <XP>XP: {userXP.toLocaleString()}</XP>
           </LevelInfo>
         </WelcomeTextStyled>
       </Header>

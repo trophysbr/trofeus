@@ -192,7 +192,7 @@ const MeusDesafios = () => {
     switch (difficulty) {
       case 'Expert':
         return '#c0392b'; // Vermelho escuro
-      case 'Dificil':
+      case 'Difícil':
         return '#e74c3c'; // Vermelho claro
       default:
         return '#6c5ce7'; // Padrão

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaHome, FaTrophy, FaStar, FaUser, FaBell, FaSignOutAlt } from 'react-icons/fa';
 import styled from 'styled-components';
 import SearchAutocomplete from './SearchAutocomplete';
@@ -49,8 +49,60 @@ const SearchContainer = styled.div`
   width: 320px;
 `;
 
+const ProfileImage = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  object-fit: cover;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const ProfileIcon = styled(FaUser)`
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6c5ce7;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
 const Header = () => {
   const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState(null);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        if (user) {
+          const { data: userData, error: profileError } = await supabase
+            .from('Usuarios')
+            .select('foto_perfil')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profileError) throw profileError;
+
+          if (userData?.foto_perfil) {
+            setProfileImage(userData.foto_perfil);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar foto do perfil:', error);
+      }
+    };
+
+    fetchProfileImage();
+  }, []);
 
   const handleHomeClick = () => {
     navigate('/DashboardGamer');
@@ -70,6 +122,10 @@ const Header = () => {
     navigate('/MeusDesafios');
   };
 
+  const handleProfileClick = () => {
+    navigate('/editar-perfil');
+  };
+
   return (
     <HeaderContainer>
       <Logo>🏆 Trophys</Logo>
@@ -81,9 +137,19 @@ const Header = () => {
         <IconButton><FaTrophy /></IconButton>
         <IconButton><FaStar onClick={handleRedirect} style={{ cursor: 'pointer' }} /></IconButton>
         <IconButton><FaBell /></IconButton>
-        <IconButton onClick={() => navigate('/editar-perfil')}>
-          <FaUser />
-        </IconButton>
+        {profileImage ? (
+          <ProfileImage 
+            src={profileImage} 
+            alt="Foto de perfil" 
+            onClick={handleProfileClick}
+            onError={(e) => {
+              e.target.onerror = null;
+              setProfileImage(null);
+            }}
+          />
+        ) : (
+          <ProfileIcon onClick={handleProfileClick} />
+        )}
         <IconButton><FaSignOutAlt onClick={handleLogout} style={{ cursor: 'pointer' }} /></IconButton>
       </NavIcons>
     </HeaderContainer>
