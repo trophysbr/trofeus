@@ -47,55 +47,74 @@ const MinhaBiblioteca = () => {
   const [filter, setFilter] = useState('todos');
   const [sortBy, setSortBy] = useState('nome');
   const [searchTerm, setSearchTerm] = useState('');
+  const [userLevel, setUserLevel] = useState(0);
+  const [userXP, setUserXP] = useState(0);
+  const [rankName, setRankName] = useState('');
   const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserId = async () => {
+    const fetchUserData = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        setUserId(data.user.id);
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        if (user) {
+          setUserId(user.id);
+          
+          const { data: userData, error: userDataError } = await supabase
+            .from('Usuarios')
+            .select('level, xp')
+            .eq('user_id', user.id)
+            .single();
+
+          if (userDataError) throw userDataError;
+
+          if (userData) {
+            setUserLevel(userData.level || 0);
+            setUserXP(userData.xp || 0);
+
+            // Buscar o nome do rank
+            const { data: levelData, error: levelError } = await supabase
+              .from('Levels')
+              .select('rank')
+              .eq('level', userData.level)
+              .single();
+
+            if (!levelError && levelData) {
+              setRankName(levelData.rank);
+            }
+          }
+
+          // Fetch games after we have the user ID
+          const { data: gamesData, error: gamesError } = await supabase
+            .from('Jogos')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('jogo_nome', { ascending: true });
+
+          if (gamesError) throw gamesError;
+
+          const mappedGames = gamesData.map(game => ({
+            id: game.jogo_id,
+            title: game.jogo_nome,
+            image: game.jogo_imagem_url,
+            status: game.jogo_status,
+            playtime: game.jogo_tempo_jogo,
+            lastPlayed: game.data_alteracao
+          }));
+
+          setGames(mappedGames);
+        }
       } catch (error) {
-        console.error('Erro ao buscar ID do usuário:', error);
+        console.error('Erro ao buscar dados:', error);
+      } finally {
         setLoading(false);
       }
     };
-    fetchUserId();
+
+    fetchUserData();
   }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchGames();
-    }
-  }, [userId]);
-
-  const fetchGames = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('Jogos')
-        .select('*')
-        .eq('user_id', userId)
-        .order('jogo_nome', { ascending: true });
-
-      if (error) throw error;
-
-      const mappedGames = data.map(game => ({
-        id: game.jogo_id,
-        title: game.jogo_nome,
-        image: game.jogo_imagem_url,
-        status: game.jogo_status,
-        playtime: game.jogo_tempo_jogo,
-        lastPlayed: game.data_alteracao
-      }));
-
-      setGames(mappedGames);
-    } catch (error) {
-      console.error('Erro ao buscar jogos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredGames = games.filter(game => {
     const matchesFilter = filter === 'todos' || game.status.toLowerCase() === filter;
@@ -168,8 +187,8 @@ const MinhaBiblioteca = () => {
         <WelcomeText>
           <h1>Minha Biblioteca</h1>
           <LevelInfo>
-            <Level>Nível 42</Level>
-            <XP>XP: 12,450</XP>
+            <Level>Nível {userLevel}</Level>
+            <XP>XP: {userXP.toLocaleString()} | {rankName}</XP>
           </LevelInfo>
         </WelcomeText>
       </Header>

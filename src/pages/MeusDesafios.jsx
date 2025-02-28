@@ -190,10 +190,14 @@ const MeusDesafios = () => {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'Expert':
-        return '#c0392b'; // Vermelho escuro
+      case 'Fácil':
+        return '#2ecc71'; // Verde
+      case 'Médio':
+        return '#f1c40f'; // Amarelo
       case 'Difícil':
-        return '#e74c3c'; // Vermelho claro
+        return '#e74c3c'; // Vermelho
+      case 'Expert':
+        return '#6c5ce7'; // Roxo
       default:
         return '#6c5ce7'; // Padrão
     }
@@ -202,7 +206,11 @@ const MeusDesafios = () => {
   const filteredDesafios = desafios.filter((desafio) => {
     const matchesStatus = status ? desafio.desafio_status === status : true;
     const matchesDifficulty = difficulty ? desafio.desafio_dificuldade === difficulty : true;
-    const matchesSearch = search ? desafio.desafio_nome.toLowerCase().includes(search.toLowerCase()) : true;
+    const searchLower = search.toLowerCase();
+    const matchesSearch = search 
+      ? desafio.desafio_nome.toLowerCase().includes(searchLower) || 
+        desafio.Jogos.jogo_nome.toLowerCase().includes(searchLower)
+      : true;
     return matchesStatus && matchesDifficulty && matchesSearch;
   });
 
@@ -213,7 +221,7 @@ const MeusDesafios = () => {
           <FiltersContainer>
             <Input
               type="text"
-              placeholder="Buscar desafios..."
+              placeholder="Buscar por nome do desafio ou jogo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -225,8 +233,10 @@ const MeusDesafios = () => {
             </Dropdown>
             <Dropdown value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
               <option value="">Dificuldades</option>
-              <option value="Reconhecimento pessoal">Reconhecimento pessoal</option>
-              <option value="Glória eterna">Glória eterna</option>
+              <option value="Fácil">Fácil</option>
+              <option value="Médio">Médio</option>
+              <option value="Difícil">Difícil</option>
+              <option value="Expert">Expert</option>
             </Dropdown>
           </FiltersContainer>
           <Button onClick={() => navigate('/CadastroDesafio')}>Novo Desafio</Button>
