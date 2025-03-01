@@ -350,35 +350,46 @@ const DashboardGamer = () => {
       <Section style={{ marginBottom: '-2.0rem' }}>
         <h2 style={{ marginBottom: '1.25rem', fontSize: '1.25rem' }}>Jogos Recentes</h2>
         <CarouselContainer>
-          <CarouselButton 
-            className="prev" 
-            onClick={handlePrevClick}
-            style={{ display: images.length > 1 ? 'flex' : 'none' }}
-          >
-            &#8249;
-          </CarouselButton>
+          {images.length > 1 && (
+            <CarouselButton 
+              className="prev" 
+              onClick={handlePrevClick}
+            >
+              &#8249;
+            </CarouselButton>
+          )}
           <CarouselTrack 
             style={{ 
               transform: `translateX(-${currentIndex * 270}px)`,
               transition: currentIndex === 0 && images.length > 0 ? 'none' : 'transform 0.5s ease-in-out'
             }}
           >
-            {[...images, ...images].map((image, index) => (
+            {images.length === 1 ? (
               <CarouselImage
-                key={`${index}-${image}`}
-                src={image}
-                alt={`Slide ${(index % images.length) + 1}`}
-                onClick={() => recentGames[index % images.length]?.onClick()}
+                key={0}
+                src={images[0]}
+                alt="Slide 1"
+                onClick={() => recentGames[0]?.onClick()}
               />
-            ))}
+            ) : (
+              [...images, ...images].map((image, index) => (
+                <CarouselImage
+                  key={`${index}-${image}`}
+                  src={image}
+                  alt={`Slide ${(index % images.length) + 1}`}
+                  onClick={() => recentGames[index % images.length]?.onClick()}
+                />
+              ))
+            )}
           </CarouselTrack>
-          <CarouselButton 
-            className="next" 
-            onClick={handleNextClick}
-            style={{ display: images.length > 1 ? 'flex' : 'none' }}
-          >
-            &#8250;
-          </CarouselButton>
+          {images.length > 1 && (
+            <CarouselButton 
+              className="next" 
+              onClick={handleNextClick}
+            >
+              &#8250;
+            </CarouselButton>
+          )}
         </CarouselContainer>
       </Section>
 

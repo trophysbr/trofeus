@@ -436,20 +436,21 @@ const MeuJogo = () => {
       // Verificar se o jogo estava concluído antes de excluir
       const wasCompleted = gameData.jogo_status === 'Concluído';
 
-      const { error } = await supabase
+      // Primeiro, deletar todos os desafios associados ao jogo
+      const { error: desafiosError } = await supabase
+        .from('Desafios')
+        .delete()
+        .eq('jogo_id', gameData.jogo_id);
+
+      if (desafiosError) throw desafiosError;
+
+      // Depois, deletar o jogo
+      const { error: jogosError } = await supabase
         .from('Jogos')
         .delete()
         .eq('jogo_id', gameData.jogo_id);
 
-      if (error) throw error;
-
-      // Se o jogo estava concluído, atualizar o XP (-5)
-      if (wasCompleted) {
-        const { error: xpError } = await supabase
-          .rpc('update_user_xp', { xp_change: -5 });
-        
-        if (xpError) throw xpError;
-      }
+      if (jogosError) throw jogosError;
 
       setShowDeleteModal(false);
       toast.success('Jogo excluído com sucesso!', {
