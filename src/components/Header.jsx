@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabaseClient';
 import { FaBars, FaTimes, FaHome, FaGamepad, FaTasks, FaBookmark, FaUser, FaSignOutAlt, FaCamera, FaTrophy } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import SearchAutoComplete from './SearchAutoComplete';
+import SearchAutoComplete from './SearchAutocomplete';
 
 const HeaderContainer = styled.header`
   background-color: #1a1a2e;
