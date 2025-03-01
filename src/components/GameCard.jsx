@@ -35,22 +35,31 @@ const CardContainer = styled.div`
   }
 `;
 
-const GameImage = styled.div`
-  width: 100%;
-  height: 300px;
-  background-image: url(${props => props.src});
-  background-size: cover;
-  background-position: center;
+const GameImage = styled.img`
+  width: 250px;
+  height: 350px;
+  object-fit: cover;
 `;
 
 const GameInfo = styled.div`
   padding: 1rem;
-  
-  h3 {
-    margin: 0;
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-  }
+  width: 250px;
+`;
+
+const GameTitle = styled.h3`
+  color: white;
+  font-size: 1rem;
+  margin: 0;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const GameProgress = styled.p`
+  color: #9ca3af;
+  font-size: 0.875rem;
+  margin: 0;
 `;
 
 const Progress = styled.span`

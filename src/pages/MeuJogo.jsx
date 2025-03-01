@@ -277,7 +277,7 @@ const MeuJogo = () => {
 
   useEffect(() => {
     if (!location.state?.gameId) {
-      navigate('/biblioteca');
+      navigate('/MinhaBiblioteca');
       return;
     }
     fetchGameData(location.state.gameId);
@@ -463,7 +463,7 @@ const MeuJogo = () => {
 
       // Redirecionar após 2 segundos
       setTimeout(() => {
-        navigate('/biblioteca');
+        navigate('/MinhaBiblioteca');
       }, 2000);
 
     } catch (error) {
@@ -528,7 +528,7 @@ const MeuJogo = () => {
       <Header>
         <WelcomeText>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <BackButton onClick={() => navigate('/biblioteca')}>
+            <BackButton onClick={() => navigate('/MinhaBiblioteca')}>
               <FaArrowLeft />
               Voltar
             </BackButton>

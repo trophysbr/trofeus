@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
 import "slick-carousel/slick/slick.css";
@@ -8,7 +8,6 @@ import ChallengeCard from '../components/ChallengeCard';
 import { supabase } from '../config/supabaseClient';
 import {
   DashboardContainer,
-  CarouselContainer,
   GameCardWrapper,
   Header,
   WelcomeText,
@@ -22,6 +21,7 @@ import {
 } from '../styles/components/DashboardStyles';
 import styled from 'styled-components';
 import Footer from '../components/Footer';
+import { FaStar, FaTrophy } from 'react-icons/fa';
 
 const WelcomeTextStyled = styled.div`
   h1 {
@@ -40,6 +40,69 @@ const FooterContainer = styled.footer`
   background-color: #16213e;
 `;
 
+const CarouselContainer = styled.div`
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  margin: 20px 0;
+`;
+
+const CarouselTrack = styled.div`
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  width: max-content;
+`;
+
+const CarouselImage = styled.img`
+  width: 250px;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-right: 20px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+const CarouselButton = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  z-index: 2;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.prev {
+    left: 10px;
+  }
+
+  &.next {
+    right: 10px;
+  }
+`;
+
 const DashboardGamer = () => {
   const [recentGames, setRecentGames] = useState([]);
   const [activeChallenges, setActiveChallenges] = useState([]);
@@ -53,6 +116,9 @@ const DashboardGamer = () => {
   const [userName, setUserName] = useState('Jogador');
   const [userLevel, setUserLevel] = useState(0);
   const [userXP, setUserXP] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [images, setImages] = useState([]);
+  const carouselRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -123,6 +189,16 @@ const DashboardGamer = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (images.length > 0) {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+
   const formatGameTime = (timeString) => {
     if (!timeString) return '0';
     
@@ -140,7 +216,7 @@ const DashboardGamer = () => {
         .eq('user_id', user.id)
         .order('data_alteracao', { ascending: false, nullsFirst: false })
         .order('data_inclusao', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (gamesError) throw gamesError;
 
@@ -192,7 +268,7 @@ const DashboardGamer = () => {
         progress: game.jogo_status === 'Na Fila' 
           ? 'Na Fila'
           : `${game.jogo_status} - ${formatGameTime(game.jogo_tempo_jogo)}h`,
-        onClick: () => navigate('/meu-jogo', { state: { gameId: game.jogo_id } })
+        onClick: () => navigate('/MeuJogo', { state: { gameId: game.jogo_id } })
       }));
 
       // Mapear os dados dos desafios
@@ -217,6 +293,8 @@ const DashboardGamer = () => {
         challengesCount: challengesCount || 0,
         trophiesCount: trophiesCount || 0
       });
+
+      setImages(games.map(game => game.jogo_imagem_url));
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
@@ -224,35 +302,16 @@ const DashboardGamer = () => {
     }
   };
 
-  const settings = {
-    dots: false,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    draggable: true,
-    swipeToSlide: true,
-    arrows: true,
-    responsive: [
-      {
-        breakpoint: 1200,
-        settings: {
-          slidesToShow: 3,
-        }
-      },
-      {
-        breakpoint: 768,
-        settings: {
-          slidesToShow: 2,
-        }
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-        }
-      }
-    ]
+  const handlePrevClick = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNextClick = () => {
+    setCurrentIndex((prevIndex) => 
+      (prevIndex + 1) % images.length
+    );
   };
 
   if (loading) {
@@ -274,7 +333,7 @@ const DashboardGamer = () => {
       </Header>
 
       <StatsGrid>
-        <StatCard onClick={() => navigate('/biblioteca')}>
+        <StatCard onClick={() => navigate('/MinhaBiblioteca')}>
           <h2>{userStats.gamesCount}</h2>
           <p>Jogos na coleção</p>
         </StatCard>
@@ -290,20 +349,40 @@ const DashboardGamer = () => {
 
       <Section style={{ marginBottom: '-2.0rem' }}>
         <h2 style={{ marginBottom: '1.25rem', fontSize: '1.25rem' }}>Jogos Recentes</h2>
-        <CarouselContainer style={{ margin: '4px' }}>
-          <Slider {...settings}>
-            {recentGames.map(game => (
-              <div key={game.id} style={{ padding: '4px' }}>
-                <GameCardWrapper>
-                  <GameCard {...game} />
-                </GameCardWrapper>
-              </div>
+        <CarouselContainer>
+          <CarouselButton 
+            className="prev" 
+            onClick={handlePrevClick}
+            style={{ display: images.length > 1 ? 'flex' : 'none' }}
+          >
+            &#8249;
+          </CarouselButton>
+          <CarouselTrack 
+            style={{ 
+              transform: `translateX(-${currentIndex * 270}px)`,
+              transition: currentIndex === 0 && images.length > 0 ? 'none' : 'transform 0.5s ease-in-out'
+            }}
+          >
+            {[...images, ...images].map((image, index) => (
+              <CarouselImage
+                key={`${index}-${image}`}
+                src={image}
+                alt={`Slide ${(index % images.length) + 1}`}
+                onClick={() => recentGames[index % images.length]?.onClick()}
+              />
             ))}
-          </Slider>
+          </CarouselTrack>
+          <CarouselButton 
+            className="next" 
+            onClick={handleNextClick}
+            style={{ display: images.length > 1 ? 'flex' : 'none' }}
+          >
+            &#8250;
+          </CarouselButton>
         </CarouselContainer>
       </Section>
 
-      <Section style={{ marginTop: '1.0rem' }}>
+      <Section style={{ marginTop: '4rem' }}>
         <h2 style={{ marginBottom: '1.25rem', fontSize: '1.25rem' }}>Desafios Ativos</h2>
         <ChallengesGrid style={{ gap: '0.5rem' }}>
           {activeChallenges.map(challenge => (

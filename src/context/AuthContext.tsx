@@ -1,68 +1,50 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../config/supabaseClient';
 
 interface AuthContextType {
   user: any;
-  login: (userData: any) => Promise<void>;
-  logout: () => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const signUp = async (email: string, password: string, name: string) => {
-    try {
-      // Cria o usuário no sistema de autenticação do Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+  useEffect(() => {
+    // Buscar sessão atual
+    const fetchSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
 
-      if (authError) throw authError;
+    fetchSession();
 
-      // Insere o usuário na tabela 'usuario'
-      const { data: userData, error: userError } = await supabase
-        .from('usuario')
-        .insert([
-          {
-            user_id: authData.user?.id,
-            email,
-            nome: name,
-          }
-        ])
-        .select();
+    // Escutar mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-      if (userError) throw userError;
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []); // Dependência vazia pois só queremos executar uma vez na montagem
 
-      setUser(userData[0]);
-    } catch (error) {
-      console.error('Erro ao criar usuário:', error);
-      throw error;
-    }
-  };
-
-  const login = async (userData: any) => {
-    setUser(userData);
-  };
-
-  const logout = async () => {
-    setUser(null);
+  const value = {
+    user,
+    loading
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, signUp }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }; 

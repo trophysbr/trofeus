@@ -236,7 +236,7 @@ const DetalhesJogo = () => {
       // Exibir toast e redirecionar após 1 segundo
       toast.success('Jogo adicionado à biblioteca com sucesso!');
       setTimeout(() => {
-        navigate('/biblioteca');
+        navigate('/MinhaBiblioteca');
       }, 1000); // 1 segundo de delay para o usuário ver a mensagem
 
     } catch (error) {

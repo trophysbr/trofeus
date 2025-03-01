@@ -218,7 +218,7 @@ const MinhaBiblioteca = () => {
 
         <GamesGrid>
           {sortedAndFilteredGames.map(game => (
-            <GameCard key={game.id} onClick={() => navigate('/meu-jogo', { state: { gameId: game.id } })}>
+            <GameCard key={game.id} onClick={() => navigate('/MeuJogo', { state: { gameId: game.id } })}>
               <GameImage src={game.image} alt={game.title} />
               <GameInfo>
                 <GameTitle>{game.title}</GameTitle>

@@ -110,7 +110,7 @@ const SearchAutoComplete = () => {
       setResults([]);
 
       // Primeiro navega com loading true
-      navigate('/jogo', { 
+      navigate('/DetalhesJogo', { 
         state: { 
           gameData: null,
           isLoading: true 
@@ -152,7 +152,7 @@ const SearchAutoComplete = () => {
       console.log('Dados do jogo:', gameData);
 
       // Navegar para a página de detalhes com os dados e loading false
-      navigate('/jogo', { 
+      navigate('/DetalhesJogo', { 
         state: { 
           gameData: gameData,
           isLoading: false 
@@ -164,7 +164,7 @@ const SearchAutoComplete = () => {
       console.error('Erro ao buscar detalhes do jogo:', error);
       alert('Erro ao carregar detalhes do jogo. Por favor, tente novamente.');
       // Em caso de erro, navega com loading false
-      navigate('/jogo', { 
+      navigate('/DetalhesJogo', { 
         state: { 
           gameData: null,
           isLoading: false 

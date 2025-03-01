@@ -70,6 +70,50 @@ const ChallengesContainer = styled.div`
   gap: 20px;
 `;
 
+const ImageContainer = styled.div`
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const GameThumbnail = styled.img`
+  width: 140px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 4px;
+`;
+
+const Tag = styled.span`
+  display: inline-block;
+  background-color: ${({ color }) => color || '#6c5ce7'};
+  color: white;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  margin-right: 10px;
+  margin-bottom: 15px;
+  white-space: nowrap;
+`;
+
+const LargeTag = styled(Tag)`
+  font-size: 1.1rem;
+`;
+
+const XPTag = styled(LargeTag)`
+  background-color: #6c5ce7;
+  min-width: 60px;
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+`;
+
 const ChallengeCard = styled.div`
   background: rgba(45, 45, 61, 0.7);
   padding: 20px;
@@ -80,6 +124,7 @@ const ChallengeCard = styled.div`
   max-width: 550px;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
+  position: relative;
 
   &:hover {
     transform: translateY(-5px);
@@ -96,22 +141,6 @@ const TitleContainer = styled.div`
 const Title = styled.h3`
   font-size: 1.5rem;
   margin: 0;
-`;
-
-const Tag = styled.span`
-  display: inline-block;
-  background-color: ${({ color }) => color || '#6c5ce7'};
-  color: white;
-  padding: 3px 8px; /* Reduzir o padding dos alertas de status */
-  border-radius: 5px;
-  font-size: 0.8rem;
-  margin-right: 10px;
-  margin-bottom: 15px;
-  white-space: nowrap; /* Evitar quebra de linha */
-`;
-
-const LargeTag = styled(Tag)`
-  font-size: 1.1rem; /* Aumentar a fonte do percentual e da dificuldade */
 `;
 
 const Paragraph = styled.p`
@@ -141,7 +170,6 @@ const MeusDesafios = () => {
   useEffect(() => {
     const fetchDesafios = async () => {
       try {
-        // Obter o usuário logado
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) throw userError;
@@ -151,14 +179,14 @@ const MeusDesafios = () => {
           return;
         }
 
-        // Buscar desafios do usuário logado
         const { data, error } = await supabase
           .from('Desafios')
           .select(`
             *,
             Jogos!inner (
               user_id,
-              jogo_nome
+              jogo_nome,
+              jogo_imagem_url
             )
           `)
           .eq('Jogos.user_id', user.id)
@@ -255,10 +283,19 @@ const MeusDesafios = () => {
                 </Tag>
               </TitleContainer>
               <Paragraph>{desafio.desafio_nome}</Paragraph>
-              <LargeTag color="#4b0082">{desafio.desafio_percentual}%</LargeTag>
-              <LargeTag color={getDifficultyColor(desafio.desafio_dificuldade)}>
-                {desafio.desafio_dificuldade}
-              </LargeTag>
+              <ImageContainer>
+                <GameThumbnail 
+                  src={desafio.Jogos.jogo_imagem_url} 
+                  alt={desafio.Jogos.jogo_nome}
+                />
+              </ImageContainer>
+              <TagsContainer>
+                <LargeTag key="percentual" color="#4b0082">{desafio.desafio_percentual}%</LargeTag>
+                <LargeTag key="dificuldade" color={getDifficultyColor(desafio.desafio_dificuldade)}>
+                  {desafio.desafio_dificuldade}
+                </LargeTag>
+                <XPTag key="xp">XP: {desafio.desafio_status === 'Concluído' ? '5' : '0'}</XPTag>
+              </TagsContainer>
               <Paragraph>
                 <Icon><FaCalendarAlt /></Icon>
                 Início: {desafio.desafio_inicio}
